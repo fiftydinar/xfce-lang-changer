@@ -1,0 +1,12 @@
+[Desktop Entry]
+Version=1.0
+Name=Language Changer
+Comment=Change the system language
+Exec=/usr/bin/xfce-lang-changer
+Icon=preferences-desktop-locale
+Terminal=false
+Type=Application
+Categories=XFCE;Settings;DesktopSettings;HardwareSettings;
+NotShowIn=KDE;GNOME;
+StartupNotify=true
+X-XFCE-Plugin=true
