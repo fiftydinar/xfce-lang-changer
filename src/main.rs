@@ -1,4 +1,4 @@
-use std::{cell::RefCell, path::PathBuf, process::Command, rc::Rc};
+use std::{cell::RefCell, collections::HashMap, path::PathBuf, process::Command, rc::Rc};
 use fltk::{
     app, button::Button, dialog,
     enums::{Align, CallbackTrigger, Color, FrameType},
@@ -9,6 +9,122 @@ use fltk::{
 use fltk_theme::{widget_themes, WidgetTheme, ThemeType};
 
 const AERO_BORDER: Color = Color::from_hex(0x09554E);
+
+#[derive(Clone)]
+struct Trans {
+    window_title: String,
+    header_title: String,
+    header_subtitle: String,
+    search_hint: String,
+    current_fmt: String,
+    apply: String,
+    quit: String,
+    lang_changed_title: String,
+    lang_changed_msg_fmt: String,
+    later: String,
+    logout_btn: String,
+    ok: String,
+    compat_title: String,
+    no_locales: String,
+    compat_quit: String,
+    error_fmt: String,
+    warning_wayland: String,
+    warning_gnome_fmt: String,
+    warning_kde: String,
+    warning_deepin: String,
+    warning_non_arch: String,
+}
+
+const LANG_JSON: &str = include_str!("lang.json");
+
+fn trans_from_map(m: &HashMap<String, String>) -> Trans {
+    fn g(m: &HashMap<String, String>, key: &str) -> String {
+        m.get(key).cloned().unwrap_or_default()
+    }
+    Trans {
+        window_title: g(m, "window_title"),
+        header_title: g(m, "header_title"),
+        header_subtitle: g(m, "header_subtitle"),
+        search_hint: g(m, "search_hint"),
+        current_fmt: g(m, "current_fmt"),
+        apply: g(m, "apply"),
+        quit: g(m, "quit"),
+        lang_changed_title: g(m, "lang_changed_title"),
+        lang_changed_msg_fmt: g(m, "lang_changed_msg_fmt"),
+        later: g(m, "later"),
+        logout_btn: g(m, "logout_btn"),
+        ok: g(m, "ok"),
+        compat_title: g(m, "compat_title"),
+        no_locales: g(m, "no_locales"),
+        compat_quit: g(m, "compat_quit"),
+        error_fmt: g(m, "error_fmt"),
+        warning_wayland: g(m, "warning_wayland"),
+        warning_gnome_fmt: g(m, "warning_gnome_fmt"),
+        warning_kde: g(m, "warning_kde"),
+        warning_deepin: g(m, "warning_deepin"),
+        warning_non_arch: g(m, "warning_non_arch"),
+    }
+}
+
+fn load_translations() -> Trans {
+    let all: HashMap<String, HashMap<String, String>> =
+        serde_json::from_str(LANG_JSON).expect("Embedded lang.json is invalid");
+
+    let lang_raw = std::env::var("LANG").unwrap_or_default();
+
+    // Extract @modifier from anywhere — handles both sr_RS.UTF-8@latin and sr_RS@latin.UTF-8
+    let (modifier, base_with_encoding) = match lang_raw.find('@') {
+        Some(pos) => {
+            let after = &lang_raw[pos + 1..];
+            let mod_part = after.split('.').next().unwrap_or(after);
+            (Some(mod_part.to_lowercase()), &lang_raw[..pos])
+        }
+        None => (None, lang_raw.as_str()),
+    };
+
+    let normalized = base_with_encoding.split('.').next().unwrap_or(base_with_encoding).to_lowercase();
+    let mut candidates = vec![normalized.clone()];
+
+    if let Some(pos) = normalized.find(&['_', '-'][..]) {
+        let lang = &normalized[..pos];
+        let rest = &normalized[pos + 1..];
+        if !rest.is_empty() {
+            candidates.push(format!("{}-{}", lang, rest));
+        }
+        if let Some(v) = &modifier {
+            candidates.push(format!("{}@{}", lang, v));
+            candidates.push(format!("{}-{}", lang, v));
+            // Map common @modifier words to ISO 15924 script codes
+            if v == "latin" || v == "latn" {
+                candidates.push(format!("{}-Latn", lang));
+            }
+        }
+        candidates.push(lang.to_string());
+    } else if let Some(v) = &modifier {
+        candidates.push(format!("{}@{}", normalized, v));
+        candidates.push(format!("{}-{}", normalized, v));
+        if v == "latin" || v == "latn" {
+            candidates.push(format!("{}-Latn", normalized));
+        }
+    }
+
+    for c in &candidates {
+        if let Some(m) = all.get(c) {
+            return trans_from_map(m);
+        }
+    }
+
+    trans_from_map(all.get("en").expect("Missing English translations"))
+}
+
+fn tr_fmt(template: &str, pairs: &[(&str, &str)]) -> String {
+    let mut s = template.to_string();
+    for (key, val) in pairs {
+        let placeholder = format!("{{{}}}", key);
+        s = s.replace(&placeholder, val);
+    }
+    s
+}
 
 fn config_dir() -> PathBuf {
     dirs::config_dir().unwrap_or_else(|| {
@@ -160,7 +276,7 @@ fn logout_xfce() {
     Command::new("xfce4-session-logout").arg("--logout").spawn().ok();
 }
 
-fn show_aero_alert(title: &str, msg: &str) {
+fn show_aero_alert(t: &Trans, title: &str, msg: &str) {
     let screen = app::screen_size();
     let dlg_w = 420;
     let dlg_h = 360;
@@ -200,7 +316,7 @@ fn show_aero_alert(title: &str, msg: &str) {
     text.set_text_color(Color::Black);
     text.set_frame(FrameType::NoBox);
 
-    let mut ok_btn = Button::new((dlg_w - 75) / 2, dlg_h - 46, 75, 26, "OK");
+    let mut ok_btn = Button::new((dlg_w - 75) / 2, dlg_h - 46, 75, 26, t.ok.as_str());
     ok_btn.set_label_size(11);
     ok_btn.set_callback(move |_| app::quit());
 
@@ -209,23 +325,25 @@ fn show_aero_alert(title: &str, msg: &str) {
     let _ = app::run();
 }
 
-fn show_aero_msg(human_name: &str, locale: &str) -> Option<i32> {
+fn show_aero_msg(t: &Trans, human_name: &str, locale: &str) -> Option<i32> {
     let screen = app::screen_size();
     let dlg_w = 400;
     let dlg_h = 150;
+    let title = t.lang_changed_title.as_str();
     let mut win = Window::new(
         (screen.0 as i32 - dlg_w) / 2,
         (screen.1 as i32 - dlg_h) / 2,
         dlg_w, dlg_h,
-        "Language Changed",
+        title,
     );
     win.set_color(Color::White);
     win.make_modal(true);
     win.set_callback(|_| {});
 
+    let header_label = t.lang_changed_title.clone();
     let mut header = Frame::new(0, 0, dlg_w, 30, "");
     header.set_frame(FrameType::NoBox);
-    header.draw(|f| {
+    header.draw(move |f| {
         let w = f.w();
         let h = f.h();
         for y in 0..h {
@@ -237,22 +355,24 @@ fn show_aero_msg(human_name: &str, locale: &str) -> Option<i32> {
         let bold = fltk::enums::Font::by_name("Noto Sans Bold");
         fltk::draw::set_font(bold, 13);
         fltk::draw::set_draw_color(Color::White);
-        fltk::draw::draw_text2("Language Changed", 0, 0, w, h, Align::Center | Align::Inside);
+        fltk::draw::draw_text2(&header_label, 0, 0, w, h, Align::Center | Align::Inside);
     });
+
+    let escaped_locale = locale.replace("@", "@@");
+    let msg_text = tr_fmt(&t.lang_changed_msg_fmt, &[("name", human_name), ("locale", &escaped_locale)]);
 
     let mut msg = Frame::new(15, 38, dlg_w - 30, 64, "");
     msg.set_frame(FrameType::NoBox);
     msg.set_label_size(12);
     msg.set_label_color(Color::Black);
     msg.set_align(Align::Left | Align::Inside);
-    let escaped_locale = locale.replace("@", "@@");
-    msg.set_label(&format!("Language set to {} ({})\n\nChanges will apply after logout.", human_name, escaped_locale));
+    msg.set_label(&msg_text);
 
     let btn_y = dlg_h - 40;
-    let mut later_btn = Button::new(dlg_w - 180, btn_y, 75, 24, "Later");
+    let mut later_btn = Button::new(dlg_w - 180, btn_y, 75, 24, t.later.as_str());
     later_btn.set_label_size(11);
 
-    let mut logout_btn = Button::new(dlg_w - 95, btn_y, 75, 24, "Log Out");
+    let mut logout_btn = Button::new(dlg_w - 95, btn_y, 75, 24, t.logout_btn.as_str());
     logout_btn.set_label_size(11);
     logout_btn.set_label_color(Color::Red);
 
@@ -275,7 +395,7 @@ fn show_aero_msg(human_name: &str, locale: &str) -> Option<i32> {
 
     win.end();
     win.show();
-    remove_close_button("Language Changed");
+    remove_close_button(title);
     let _ = app::run();
 
     let ret = result.borrow().clone();
@@ -289,8 +409,7 @@ fn remove_close_button(title: &str) {
     {
         let xid = String::from_utf8_lossy(&out.stdout).trim().to_string();
         if !xid.is_empty() {
-            // MWM_HINTS_FUNCTIONS: allow resize|move|minimize|maximize, no close
-            let func_mask: u32 = 2 | 4 | 8 | 16; // MWM_FUNC_RESIZE|MOVE|MINIMIZE|MAXIMIZE
+            let func_mask: u32 = 2 | 4 | 8 | 16;
             Command::new("xprop")
                 .args([
                     "-id", &xid,
@@ -311,49 +430,41 @@ fn is_arch() -> bool {
             .unwrap_or(false)
 }
 
-fn env_check() -> Vec<String> {
+fn env_check(t: &Trans) -> Vec<String> {
     let mut warnings = Vec::new();
 
     let session_type = std::env::var("XDG_SESSION_TYPE").unwrap_or_default();
     if session_type.eq_ignore_ascii_case("wayland") {
-        warnings.push(
-            "Wayland session detected — ~/.xprofile is not sourced on Wayland.\nLog out and select an X11 (Xorg) session at the login screen.".to_string(),
-        );
+        warnings.push(t.warning_wayland.clone());
     }
 
     if which::which("gsettings").is_ok() {
         let de = std::env::var("XDG_CURRENT_DESKTOP").unwrap_or_default();
         if de.eq_ignore_ascii_case("gnome") || de.contains("GNOME") || de.contains("Budgie") {
             let de_name = if de.contains("Budgie") { "GNOME/Budgie" } else { "GNOME" };
-            warnings.push(
-                format!("\"{}\" DE may override locale via gsettings.\nChanges may be ignored after login.", de_name),
-            );
+            warnings.push(tr_fmt(&t.warning_gnome_fmt, &[("de", de_name)]));
         }
     }
 
     if config_dir().join("plasma-localerc").exists() {
-        warnings.push(
-            "KDE plasma-localerc found — may override\nsystem locale after login.".to_string(),
-        );
+        warnings.push(t.warning_kde.clone());
     }
 
     let dde_env = dirs::home_dir().unwrap_or_default().join(".dde_env");
     if dde_env.exists() {
-        warnings.push(
-            "Deepin ~/.dde_env found — may override\nsystem locale after login.".to_string(),
-        );
+        warnings.push(t.warning_deepin.clone());
     }
 
     if !is_arch() {
-        warnings.push(
-            "Non-Arch distro detected — Arch uses /etc/profile.d/locale.sh to\nallow locale.conf to apply, other distros may use different mechanisms\nthat could override ~/.xprofile.".to_string(),
-        );
+        warnings.push(t.warning_non_arch.clone());
     }
 
     warnings
 }
 
 fn main() {
+    let t = load_translations();
+
     let theme = WidgetTheme::new(ThemeType::Aero);
     theme.apply();
 
@@ -361,25 +472,18 @@ fn main() {
     let current = get_current_locale();
 
     if available.borrow().is_empty() {
-        dialog::alert_default(
-            "No locales found!\n\n\
-              Run 'sudo locale-gen' to generate locales,\n\
-              or the system image may not have them.\n\n\
-              See: cat /etc/locale.gen",
-        );
+        dialog::alert_default(&t.no_locales);
         std::process::exit(1);
     }
 
-    let warnings = env_check();
+    let warnings = env_check(&t);
     if !warnings.is_empty() {
         let numbered: Vec<String> = warnings.iter().enumerate()
             .map(|(i, w)| format!("{}. {}", i + 1, w))
             .collect();
-        let msg = format!(
-            "{}\n\nThe app will now quit due to incompatibility issues.\n\nPlease fix the issues above and re-launch.",
-            numbered.join("\n\n"),
-        );
-        show_aero_alert("Compatibility Warning", &msg);
+        let body = numbered.join("\n\n");
+        let msg = format!("{}\n\n{}", body, t.compat_quit);
+        show_aero_alert(&t, &t.compat_title, &msg);
         std::process::exit(1);
     }
 
@@ -391,10 +495,12 @@ fn main() {
         (screen.0 as i32 - buf_w) / 2,
         (screen.1 as i32 - buf_h) / 2,
         buf_w, buf_h,
-        "Languages",
+        t.window_title.as_str(),
     );
     win.make_resizable(true);
 
+    let header_title = t.header_title.clone();
+    let header_subtitle = t.header_subtitle.clone();
     let mut header = Frame::new(0, 0, buf_w, 56, "");
     header.set_frame(FrameType::NoBox);
     header.draw(move |f| {
@@ -410,11 +516,11 @@ fn main() {
         let bold = fltk::enums::Font::by_name("Noto Sans Bold");
         fltk::draw::set_font(bold, 16);
         fltk::draw::set_draw_color(Color::White);
-        fltk::draw::draw_text2("Languages", 0, 6, w, 24, Align::Center | Align::Inside);
+        fltk::draw::draw_text2(&header_title, 0, 6, w, 24, Align::Center | Align::Inside);
         let reg = fltk::enums::Font::by_name("Noto Sans");
         fltk::draw::set_font(reg, 11);
         fltk::draw::set_draw_color(Color::from_hex(0xA0D0CC));
-        fltk::draw::draw_text2("Change your system language", 0, 32, w, 20, Align::Center | Align::Inside);
+        fltk::draw::draw_text2(&header_subtitle, 0, 32, w, 20, Align::Center | Align::Inside);
         fltk::draw::set_draw_color(AERO_BORDER);
         fltk::draw::draw_rect_fill(0, h - 1, w, 1, AERO_BORDER);
     });
@@ -422,15 +528,16 @@ fn main() {
     let body_y = 68;
     let body_h = buf_h - body_y - 8;
 
+    let current_text = tr_fmt(&t.current_fmt, &[("name", &locale_to_human_name(&current)), ("locale", &current)]);
     let mut curr_label = Frame::new(20, body_y, buf_w - 40, 24, "");
     curr_label.set_frame(FrameType::ThinDownBox);
     curr_label.set_color(Color::White);
     curr_label.set_label_size(13);
     curr_label.set_label_color(Color::from_hex(0x09554E));
     curr_label.set_align(Align::Center | Align::Inside);
-    curr_label.set_label(&format!("Current: {} - {}", locale_to_human_name(&current), current));
+    curr_label.set_label(&current_text);
 
-    let mut search_label = Frame::new(20, body_y + 25, buf_w - 40, 16, "Search languages...");
+    let mut search_label = Frame::new(20, body_y + 25, buf_w - 40, 16, t.search_hint.as_str());
     search_label.set_label_size(10);
     search_label.set_label_color(Color::from_hex(0x888888));
     search_label.set_align(Align::Left | Align::Inside);
@@ -570,12 +677,12 @@ fn main() {
 
     let btn_area_y = list_y + list_h + 8;
 
-    let mut apply_btn = Button::new(buf_w - 100, btn_area_y, 80, 23, "Apply");
+    let mut apply_btn = Button::new(buf_w - 100, btn_area_y, 80, 23, t.apply.as_str());
     apply_btn.set_label_size(11);
     apply_btn.set_label_color(Color::Black);
     apply_btn.set_frame(widget_themes::OS_BUTTON_UP_BOX);
 
-    let mut quit_btn = Button::new(20, btn_area_y, 80, 23, "Quit");
+    let mut quit_btn = Button::new(20, btn_area_y, 80, 23, t.quit.as_str());
     quit_btn.set_label_size(11);
     quit_btn.set_label_color(Color::Black);
     quit_btn.set_frame(widget_themes::OS_BUTTON_UP_BOX);
@@ -603,12 +710,12 @@ fn main() {
                 match apply_locale(&loc) {
                     Ok(()) => {
                         *apply_dlg_open.borrow_mut() = true;
-                        if show_aero_msg(&name, &loc) == Some(0) {
+                        if show_aero_msg(&t, &name, &loc) == Some(0) {
                             logout_xfce();
                         }
                         *apply_dlg_open.borrow_mut() = false;
                     }
-                    Err(e) => dialog::alert_default(&format!("Error: {}", e)),
+                    Err(e) => dialog::alert_default(&tr_fmt(&t.error_fmt, &[("msg", &e)])),
                 }
             }
         }
