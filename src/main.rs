@@ -1,15 +1,11 @@
 use std::{cell::RefCell, process::Command, rc::Rc};
 use fltk::{
-    app, browser::HoldBrowser, button::Button, dialog,
+    app, button::Button, dialog,
     enums::{Align, CallbackTrigger, Color, FrameType},
-    frame::Frame, input::Input, prelude::*, window::Window,
+    frame::Frame, input::Input, prelude::*,
+    table::{TableContext, TableRow}, window::Window,
 };
 use fltk_theme::{widget_themes, WidgetTheme, ThemeType};
-
-extern "C" {
-    fn Fl_Check_Browser_set_text_font(self_: *mut std::ffi::c_void, f: i32);
-    fn Fl_Check_Browser_set_text_color(self_: *mut std::ffi::c_void, c: u32);
-}
 
 const AERO_BORDER: Color = Color::from_hex(0x09554E);
 const AERO_HEADER_SUBTITLE: Color = Color::from_hex(0xFFFFFF);
@@ -39,7 +35,7 @@ fn get_current_locale() -> String {
 }
 
 fn get_available_locales() -> Vec<(String, String)> {
-    let mut raw = Vec::new();
+    let mut raw: Vec<String> = Vec::new();
     if let Ok(output) = Command::new("locale").arg("-a").output() {
         if output.status.success() {
             for line in String::from_utf8_lossy(&output.stdout).lines() {
@@ -51,8 +47,26 @@ fn get_available_locales() -> Vec<(String, String)> {
         }
     }
 
-    raw.sort();
-    raw.into_iter().map(|loc| {
+    // Group by base locale (strip encoding suffix), prefer UTF-8
+    let mut groups: std::collections::BTreeMap<String, String> = std::collections::BTreeMap::new();
+    for loc in &raw {
+        let base = loc.split('.').next().unwrap_or(loc).to_string();
+        let is_utf8 = loc.contains(".utf8") || loc.contains(".UTF-8");
+        let entry = groups.entry(base);
+        use std::collections::btree_map::Entry;
+        match entry {
+            Entry::Occupied(mut e) => {
+                if is_utf8 {
+                    e.insert(loc.clone());
+                }
+            }
+            Entry::Vacant(e) => {
+                e.insert(loc.clone());
+            }
+        }
+    }
+
+    groups.into_values().map(|loc| {
         let human = locale_to_human_name(&loc);
         (human, loc)
     }).collect()
@@ -83,7 +97,7 @@ fn locale_to_human_name(locale: &str) -> String {
     } else {
         String::new()
     };
-    format!("{}{}  —  {}", lang_name, region_name, locale)
+    format!("{}{}", lang_name, region_name)
 }
 
 fn apply_locale(locale: &str) -> Result<(), String> {
@@ -181,7 +195,7 @@ fn main() {
     curr_label.set_label_size(13);
     curr_label.set_label_color(Color::Black);
     curr_label.set_align(Align::Left | Align::Inside);
-    curr_label.set_label(&format!("Current: {}", locale_to_human_name(&current)));
+    curr_label.set_label(&format!("Current: {} - {}", locale_to_human_name(&current), current));
 
     // Search/filter label
     let mut search_label = Frame::new(20, body_y + 25, buf_w - 40, 16, "Search languages...");
@@ -199,41 +213,124 @@ fn main() {
     refresh_btn.set_label_color(Color::Black);
     refresh_btn.set_frame(widget_themes::OS_BUTTON_UP_BOX);
 
-    // Locale browser list
+    // Locale table
     let list_y = body_y + 72;
     let list_h = body_h - 104;
-    let mut browser = HoldBrowser::new(20, list_y, buf_w - 40, list_h, "");
-    browser.set_text_size(11);
-    // Use a font with Arabic support to prevent RTL text overlap
-    unsafe {
-        let font = fltk::enums::Font::by_name("Noto Sans");
-        Fl_Check_Browser_set_text_font(browser.as_widget_ptr() as *mut _, font.bits());
-        Fl_Check_Browser_set_text_color(browser.as_widget_ptr() as *mut _, Color::Black.bits());
-    }
-    for (human, _) in available.borrow().iter() {
-        browser.add(human);
-    }
+
+    let visible = Rc::new(RefCell::new(Vec::<usize>::new()));
+    *visible.borrow_mut() = (0..available.borrow().len()).collect();
+
+    let selected = Rc::new(RefCell::new(-1i32));
+
+    let mut table = TableRow::new(20, list_y, buf_w - 40, list_h, "");
+    table.set_frame(FrameType::NoBox);
+    table.end();
+    table.set_rows(visible.borrow().len() as i32);
+    table.set_cols(2);
+    let col0_w = ((buf_w - 40) as f32 * 0.55) as i32;
+    table.set_col_width(0, col0_w);
+    table.set_col_width(1, (buf_w - 40) - col0_w - 1);
+    table.set_row_resize(false);
+    table.set_col_resize(false);
+    table.set_row_header(false);
+    table.set_col_header(false);
 
     // Preselect current locale
-    for (i, (_, loc)) in available.borrow().iter().enumerate() {
-        if loc == &current {
-            browser.select((i + 1) as i32);
-            break;
+    {
+        let avail = available.borrow();
+        let vis = visible.borrow();
+        for (vi, &idx) in vis.iter().enumerate() {
+            if avail[idx].1 == current {
+                *selected.borrow_mut() = vi as i32;
+                break;
+            }
         }
+    }
+
+    // Draw callback
+    {
+        let avail = available.clone();
+        let sel = selected.clone();
+        let vis = visible.clone();
+        table.draw_cell(move |_t, ctx, row, col, x, y, w, h| {
+            match ctx {
+                TableContext::StartPage => {
+                    fltk::draw::draw_rect_fill(x, y, w, h, Color::White);
+                }
+                TableContext::EndPage => {}
+                _ => {
+                    if row < 0 || col < 0 {
+                        return;
+                    }
+                    let r = row as usize;
+                    if r >= vis.borrow().len() {
+                        return;
+                    }
+                    let idx = vis.borrow()[r];
+                    if idx >= avail.borrow().len() {
+                        return;
+                    }
+                    let (human, loc) = &avail.borrow()[idx];
+
+                    let is_sel = *sel.borrow() == row;
+                    let bg = if is_sel {
+                        Color::from_hex(0x09554E)
+                    } else if r % 2 == 0 {
+                        Color::from_hex(0xE8E8E8)
+                    } else {
+                        Color::White
+                    };
+                    fltk::draw::draw_rect_fill(x, y, w, h, bg);
+
+                    let font = fltk::enums::Font::by_name("Noto Sans");
+                    fltk::draw::set_font(font, 13);
+
+                    let fg = if is_sel { Color::White } else { Color::Black };
+                    fltk::draw::set_draw_color(fg);
+
+                    let text = if col == 0 { human } else { loc };
+                    fltk::draw::draw_text2(text, x + 4, y, w - 4, h, Align::Left | Align::Inside);
+
+                    fltk::draw::set_draw_color(Color::from_hex(0xCCCCCC));
+                    fltk::draw::draw_rect_fill(x, y + h - 1, w, 1, Color::from_hex(0xCCCCCC));
+                }
+            }
+        });
+    }
+
+    // Selection callback
+    {
+        let sel = selected.clone();
+        let mut tbl = table.clone();
+        let vis = visible.clone();
+        table.set_callback(move |_| {
+            let row = tbl.callback_row();
+            if row >= 0 && (row as usize) < vis.borrow().len() {
+                *sel.borrow_mut() = row;
+                tbl.redraw();
+            }
+        });
     }
 
     // Filter callback
-    let mut filter_bro = browser.clone();
+    let filter_vis = visible.clone();
+    let filter_sel = selected.clone();
     let filter_avail = available.clone();
+    let mut filter_tbl = table.clone();
     filter_inp.set_trigger(CallbackTrigger::Changed);
     filter_inp.set_callback(move |inp| {
         let q = inp.value().to_lowercase();
-        filter_bro.clear();
-        for (human, _) in filter_avail.borrow().iter() {
-            if q.is_empty() || human.to_lowercase().contains(&q) {
-                filter_bro.add(human);
+        let mut new_vis = Vec::new();
+        let avail = filter_avail.borrow();
+        for (i, (human, loc)) in avail.iter().enumerate() {
+            if q.is_empty() || human.to_lowercase().contains(&q) || loc.to_lowercase().contains(&q) {
+                new_vis.push(i);
             }
         }
+        *filter_vis.borrow_mut() = new_vis;
+        *filter_sel.borrow_mut() = -1;
+        filter_tbl.set_rows(filter_vis.borrow().len() as i32);
+        filter_tbl.redraw();
     });
 
     // Bottom buttons
@@ -252,49 +349,57 @@ fn main() {
     win.end();
     win.show();
 
-    let apply_bro = browser.clone();
+    // Apply callback
+    let apply_sel = selected.clone();
+    let apply_vis = visible.clone();
     let apply_avail = available.clone();
     apply_btn.set_callback(move |_| {
-        let idx = apply_bro.value();
-        if idx > 0 {
-            if let Some(sel) = apply_bro.text(idx) {
-                let loc = apply_avail.borrow().iter().find(|(h, _)| h == &sel).map(|(_, l)| l.clone());
-                if let Some(loc) = loc {
-                    match apply_locale(&loc) {
-                        Ok(()) => {
-                            let msg = format!(
-                                "Language set to:\n{}\n\nChanges will apply fully after logout.\n\nLog out now?",
-                                loc
-                            );
-                            if dialog::choice2_default(&msg, "Log Out", "Later", "") == Some(0) {
-                                logout_xfce();
-                            }
-                        }
-                        Err(e) => dialog::alert_default(&format!("Error: {}", e)),
+        let vis = apply_vis.borrow();
+        let sel = *apply_sel.borrow();
+        if sel >= 0 && (sel as usize) < vis.len() {
+            let idx = vis[sel as usize];
+            let loc = &apply_avail.borrow()[idx].1;
+            match apply_locale(loc) {
+                Ok(()) => {
+                    let msg = format!(
+                        "Language set to:\n{}\n\nChanges will apply fully after logout.\n\nLog out now?",
+                        loc
+                    );
+                    if dialog::choice2_default(&msg, "Log Out", "Later", "") == Some(0) {
+                        logout_xfce();
                     }
                 }
+                Err(e) => dialog::alert_default(&format!("Error: {}", e)),
             }
         }
     });
 
     quit_btn.set_callback(move |_| app::quit());
 
-    let mut ref_bro = browser.clone();
+    // Refresh callback
     let ref_avail = available.clone();
+    let ref_vis = visible.clone();
+    let ref_sel = selected.clone();
+    let mut ref_tbl = table.clone();
     let mut ref_label = curr_label.clone();
     let ref_inp = filter_inp.clone();
     refresh_btn.set_callback(move |_| {
         let new_list = get_available_locales();
         *ref_avail.borrow_mut() = new_list;
-        ref_bro.clear();
         let q = ref_inp.value().to_lowercase();
-        for (human, _) in ref_avail.borrow().iter() {
-            if q.is_empty() || human.to_lowercase().contains(&q) {
-                ref_bro.add(human);
+        let mut new_vis = Vec::new();
+        let avail = ref_avail.borrow();
+        for (i, (human, loc)) in avail.iter().enumerate() {
+            if q.is_empty() || human.to_lowercase().contains(&q) || loc.to_lowercase().contains(&q) {
+                new_vis.push(i);
             }
         }
+        *ref_vis.borrow_mut() = new_vis;
+        *ref_sel.borrow_mut() = -1;
+        ref_tbl.set_rows(ref_vis.borrow().len() as i32);
+        ref_tbl.redraw();
         let new_current = get_current_locale();
-        ref_label.set_label(&format!("Current: {}", locale_to_human_name(&new_current)));
+        ref_label.set_label(&format!("Current: {} - {}", locale_to_human_name(&new_current), new_current));
     });
 
     app::run().unwrap();
