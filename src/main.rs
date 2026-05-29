@@ -14,12 +14,20 @@ extern "C" {
 const AERO_BORDER: Color = Color::from_hex(0x09554E);
 const AERO_HEADER_SUBTITLE: Color = Color::from_hex(0xFFFFFF);
 
+fn config_dir() -> std::path::PathBuf {
+    if let Ok(xdg) = std::env::var("XDG_CONFIG_HOME") {
+        std::path::PathBuf::from(xdg)
+    } else {
+        let home = std::env::var("HOME").unwrap_or_default();
+        std::path::PathBuf::from(home).join(".config")
+    }
+}
+
 fn get_current_locale() -> String {
     if let Ok(lang) = std::env::var("LANG") {
         return lang;
     }
-    let home = std::env::var("HOME").unwrap_or_default();
-    let conf_path = std::path::Path::new(&home).join(".config/locale.conf");
+    let conf_path = config_dir().join("locale.conf");
     if let Ok(content) = std::fs::read_to_string(conf_path) {
         for line in content.lines() {
             if let Some(val) = line.strip_prefix("LANG=") {
@@ -125,8 +133,7 @@ fn locale_to_human_name(locale: &str) -> String {
 }
 
 fn apply_locale(locale: &str) -> Result<(), String> {
-    let home = std::env::var("HOME").map_err(|_| "Cannot find HOME directory".to_string())?;
-    let config_dir = std::path::Path::new(&home).join(".config");
+    let config_dir = config_dir();
     std::fs::create_dir_all(&config_dir).map_err(|e| format!("Cannot create config dir: {}", e))?;
 
     std::fs::write(config_dir.join("locale.conf"), format!("LANG={}\n", locale))
