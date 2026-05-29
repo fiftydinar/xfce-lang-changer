@@ -181,9 +181,9 @@ fn main() {
             fltk::draw::draw_rect_fill(0, y, w, 1, Color::from_rgb(r, g, b));
         }
         fltk::draw::set_draw_color(Color::White);
-        fltk::draw::draw_text("Language Changer", 20, 22);
+        fltk::draw::draw_text2("Language Changer", 0, 0, w, 24, Align::Center | Align::Inside);
         fltk::draw::set_draw_color(AERO_HEADER_SUBTITLE);
-        fltk::draw::draw_text("Change your system language", 20, 40);
+        fltk::draw::draw_text2("Change your system language", 0, 20, w, 20, Align::Center | Align::Inside);
         fltk::draw::draw_rect_fill(0, h - 1, w, 1, AERO_BORDER);
     });
 
@@ -194,7 +194,7 @@ fn main() {
     let mut curr_label = Frame::new(20, body_y, buf_w - 40, 24, "");
     curr_label.set_label_size(13);
     curr_label.set_label_color(Color::Black);
-    curr_label.set_align(Align::Left | Align::Inside);
+    curr_label.set_align(Align::Center | Align::Inside);
     curr_label.set_label(&format!("Current: {} - {}", locale_to_human_name(&current), current));
 
     // Search/filter label
