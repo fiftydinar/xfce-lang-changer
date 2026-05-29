@@ -184,7 +184,22 @@ fn main() {
     let body_h = buf_h - body_y - 8;
 
     let mut curr_label = Frame::new(20, body_y, buf_w - 40, 24, "");
-    curr_label.set_frame(FrameType::RoundedBox);
+    let curr = current.clone();
+    curr_label.set_frame(FrameType::NoBox);
+    curr_label.draw(move |f| {
+        let w = f.w();
+        let h = f.h();
+        fltk::draw::set_draw_color(Color::White);
+        fltk::draw::draw_rounded_rectf(0, 0, w, h, 3);
+        fltk::draw::set_draw_color(Color::from_hex(0x9AABB8));
+        fltk::draw::draw_rounded_rect(0, 0, w, h, 3);
+        fltk::draw::set_draw_color(Color::from_hex(0x09554E));
+        fltk::draw::draw_text2(
+            &format!("Current: {} - {}", locale_to_human_name(&curr), curr),
+            0, 0, w, h,
+            Align::Center | Align::Inside,
+        );
+    });
     curr_label.set_label_size(13);
     curr_label.set_label_color(Color::from_hex(0x09554E));
     curr_label.set_align(Align::Center | Align::Inside);
