@@ -327,7 +327,7 @@ fn main() {
     }
 
     table.handle(|_, event| {
-        if event == Event::Drag || event == Event::MouseWheel {
+        if event == Event::Drag {
             return true;
         }
         false
