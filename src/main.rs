@@ -223,7 +223,7 @@ fn main() {
     let selected = Rc::new(RefCell::new(-1i32));
 
     let mut table = TableRow::new(20, list_y, buf_w - 40, list_h, "");
-    table.set_frame(FrameType::NoBox);
+    table.set_table_frame(FrameType::NoBox);
     table.end();
     table.set_rows(visible.borrow().len() as i32);
     table.set_cols(2);
@@ -257,7 +257,10 @@ fn main() {
                 TableContext::StartPage => {
                     fltk::draw::draw_rect_fill(x, y, w, h, Color::White);
                 }
-                TableContext::EndPage => {}
+                TableContext::EndPage => {
+                    fltk::draw::set_draw_color(AERO_BORDER);
+                    fltk::draw::draw_rect(x, y, w, h);
+                }
                 _ => {
                     if row < 0 || col < 0 {
                         return;
@@ -274,9 +277,13 @@ fn main() {
 
                     let is_sel = *sel.borrow() == row;
                     let bg = if is_sel {
-                        Color::from_hex(0x09554E)
+                        let t = 0.15f64;
+                        let r = (0u8 as f64 * t + 0u8 as f64 * (1.0 - t)) as u8;
+                        let g = (100u8 as f64 * t + 148u8 as f64 * (1.0 - t)) as u8;
+                        let b = (92u8 as f64 * t + 136u8 as f64 * (1.0 - t)) as u8;
+                        Color::from_rgb(r, g, b)
                     } else if r % 2 == 0 {
-                        Color::from_hex(0xE8E8E8)
+                        Color::from_hex(0xF0F2F5)
                     } else {
                         Color::White
                     };
@@ -291,8 +298,8 @@ fn main() {
                     let text = if col == 0 { human } else { loc };
                     fltk::draw::draw_text2(text, x + 4, y, w - 4, h, Align::Left | Align::Inside);
 
-                    fltk::draw::set_draw_color(Color::from_hex(0xCCCCCC));
-                    fltk::draw::draw_rect_fill(x, y + h - 1, w, 1, Color::from_hex(0xCCCCCC));
+                    fltk::draw::set_draw_color(Color::from_hex(0xD8DDE3));
+                    fltk::draw::draw_rect_fill(x, y + h - 1, w, 1, Color::from_hex(0xD8DDE3));
                 }
             }
         });
