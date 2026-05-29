@@ -133,6 +133,53 @@ fn logout_xfce() {
     Command::new("xfce4-session-logout").arg("--logout").spawn().ok();
 }
 
+fn show_aero_alert(title: &str, msg: &str) {
+    let screen = app::screen_size();
+    let dlg_w = 420;
+    let dlg_h = 360;
+    let mut win = Window::new(
+        (screen.0 as i32 - dlg_w) / 2,
+        (screen.1 as i32 - dlg_h) / 2,
+        dlg_w, dlg_h,
+        title,
+    );
+    win.set_color(Color::White);
+
+    let header_title = title.to_string();
+    let mut header = Frame::new(0, 0, dlg_w, 36, "");
+    header.set_frame(FrameType::NoBox);
+    header.draw(move |f| {
+        let w = f.w();
+        let h = f.h();
+        for y in 0..h {
+            let t = y as f64 / h as f64;
+            let g = (100u8 as f64 * (1.0 - t) + 148u8 as f64 * t) as u8;
+            let b = (92u8 as f64 * (1.0 - t) + 136u8 as f64 * t) as u8;
+            fltk::draw::draw_rect_fill(0, y, w, 1, Color::from_rgb(0, g, b));
+        }
+        let bold = fltk::enums::Font::by_name("Noto Sans Bold");
+        fltk::draw::set_font(bold, 13);
+        fltk::draw::set_draw_color(Color::White);
+        fltk::draw::draw_text2(&header_title, 0, 0, w, h, Align::Center | Align::Inside);
+    });
+
+    let body = msg.to_string();
+    let mut label = Frame::new(30, 46, dlg_w - 60, dlg_h - 100, "");
+    label.set_frame(FrameType::NoBox);
+    label.set_label_size(12);
+    label.set_label_color(Color::Black);
+    label.set_align(Align::Center | Align::Inside);
+    label.set_label(&body);
+
+    let mut ok_btn = Button::new((dlg_w - 75) / 2, dlg_h - 46, 75, 26, "OK");
+    ok_btn.set_label_size(11);
+    ok_btn.set_callback(move |_| app::quit());
+
+    win.end();
+    win.show();
+    let _ = app::run();
+}
+
 fn show_aero_msg(locale: &str) -> Option<i32> {
     let screen = app::screen_size();
     let dlg_w = 380;
@@ -202,6 +249,53 @@ fn show_aero_msg(locale: &str) -> Option<i32> {
     ret
 }
 
+fn detect_distro() -> String {
+    let content = std::fs::read_to_string("/etc/os-release")
+        .unwrap_or_default();
+    for line in content.lines() {
+        if let Some(val) = line.strip_prefix("ID=") {
+            return val.trim_matches('"').to_lowercase();
+        }
+        if let Some(val) = line.strip_prefix("ID_LIKE=") {
+            return val.trim_matches('"').to_lowercase();
+        }
+    }
+    String::new()
+}
+
+fn detect_desktop() -> String {
+    std::env::var("XDG_CURRENT_DESKTOP")
+        .or_else(|_| std::env::var("DESKTOP_SESSION"))
+        .unwrap_or_default()
+        .to_lowercase()
+}
+
+fn env_check(config_path: &str) -> Vec<String> {
+    let mut warnings = Vec::new();
+    let distro = detect_distro();
+    let de = detect_desktop();
+
+    let arch_like = ["arch", "archarm", "manjaro", "endeavouros", "artix", "cachyos"];
+    if !distro.is_empty() && !arch_like.iter().any(|&d| distro.contains(d)) {
+        warnings.push(format!(
+            "Distro \"{}\" may not source\n{}\nat login.\n\
+             The locale file will be written but may be ignored.",
+            distro, config_path
+        ));
+    }
+
+    let overrides = ["gnome", "kde", "cinnamon", "budgie", "deepin", "pantheon"];
+    if overrides.iter().any(|&d| de.contains(d)) {
+        warnings.push(format!(
+            "\"{}\" DE manages locale through its own settings.\n\
+             {} may be overridden.",
+            de, config_path
+        ));
+    }
+
+    warnings
+}
+
 fn main() {
     let theme = WidgetTheme::new(ThemeType::Aero);
     theme.apply();
@@ -217,6 +311,17 @@ fn main() {
               See: cat /etc/locale.gen",
         );
         return;
+    }
+
+    let conf_path = config_dir().join("locale.conf");
+    let warnings = env_check(&conf_path.display().to_string());
+    if !warnings.is_empty() {
+        let msg = format!(
+            "{}\n\nWriting to:\n{}\n\nThe locale file will still be written.",
+            warnings.join("\n\n"),
+            conf_path.display()
+        );
+        show_aero_alert("Compatibility Warning", &msg);
     }
 
     let screen = app::screen_size();
