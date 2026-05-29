@@ -15,43 +15,31 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Build static binary (Alpine musl)
+      - name: Install dependencies
         run: |
-          docker run --rm -v $PWD:/build -w /build rust:alpine sh -c "
-            apk add --no-cache \
-              cmake build-base musl-dev pkgconfig \
-              fontconfig-dev freetype-dev \
-              libx11-dev libxext-dev libxft-dev \
-              libxinerama-dev libxcursor-dev libxfixes-dev libxrender-dev \
-              pango-dev cairo-dev
+          sudo apt-get update
+          sudo apt-get install -y cmake pkg-config \
+            libx11-dev libxext-dev libxft-dev \
+            libxinerama-dev libxcursor-dev libxfixes-dev libxrender-dev \
+            libfontconfig-dev libfreetype-dev \
+            libpango1.0-dev libcairo2-dev
 
-            ln -s /usr/bin/gcc /usr/local/bin/musl-gcc
-            ln -s /usr/bin/g++ /usr/local/bin/musl-g++
+      - name: Build static binary
+        run: |
+          # Step 1: Build all deps (proc-macros without +crt-static)
+          cargo build --release
 
-            echo \"=== Default target ===\"
-            rustup show
-
-            cargo build --release --target x86_64-unknown-linux-musl --no-default-features
-
-            echo \"=== Rebuilding final binary fully static ===\"
-            cargo rustc --release -p xfce-lang-changer --target x86_64-unknown-linux-musl \
-              --no-default-features -- -C link-arg=-static -C link-arg=-Wl,-Bstatic
-
-            echo \"=== Binary type check ===\"
-            file /build/target/x86_64-unknown-linux-musl/release/xfce-lang-changer
-            readelf -d /build/target/x86_64-unknown-linux-musl/release/xfce-lang-changer | grep -E 'NEEDED|RUNPATH|RPATH'
-            echo \"=== ldd check ===\"
-            ldd /build/target/x86_64-unknown-linux-musl/release/xfce-lang-changer 2>&1 || true
-          "
+          # Step 2: Rebuild final binary with static glibc linking
+          RUSTFLAGS="-C target-feature=+crt-static" cargo rustc --release \
+            -p xfce-lang-changer
 
       - name: Prepare release assets
         run: |
-          sudo chown -R $(whoami) target/
           mkdir -p release
-          cp target/x86_64-unknown-linux-musl/release/xfce-lang-changer release/
+          cp target/release/xfce-lang-changer release/
           cp xfce-lang-changer.desktop release/
 
-      - name: Check binary type
+      - name: Check binary
         run: |
           file release/xfce-lang-changer
           readelf -d release/xfce-lang-changer | grep NEEDED
