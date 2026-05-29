@@ -118,6 +118,77 @@ fn logout_xfce() {
     Command::new("xfce4-session-logout").arg("--logout").spawn().ok();
 }
 
+fn show_aero_msg(locale: &str) -> Option<i32> {
+    let screen = app::screen_size();
+    let dlg_w = 380;
+    let dlg_h = 180;
+    let mut win = Window::new(
+        (screen.0 as i32 - dlg_w) / 2,
+        (screen.1 as i32 - dlg_h) / 2,
+        dlg_w, dlg_h,
+        "Language Changed",
+    );
+    win.set_color(Color::White);
+
+    let mut header = Frame::new(0, 0, dlg_w, 36, "");
+    header.set_frame(FrameType::NoBox);
+    header.draw(|f| {
+        let w = f.w();
+        let h = f.h();
+        for y in 0..h {
+            let t = y as f64 / h as f64;
+            let g = (100u8 as f64 * (1.0 - t) + 148u8 as f64 * t) as u8;
+            let b = (92u8 as f64 * (1.0 - t) + 136u8 as f64 * t) as u8;
+            fltk::draw::draw_rect_fill(0, y, w, 1, Color::from_rgb(0, g, b));
+        }
+        let bold = fltk::enums::Font::by_name("Noto Sans Bold");
+        fltk::draw::set_font(bold, 13);
+        fltk::draw::set_draw_color(Color::White);
+        fltk::draw::draw_text2("Language Changed", 0, 0, w, h, Align::Center | Align::Inside);
+    });
+
+    let mut msg = Frame::new(20, 48, dlg_w - 40, 60, "");
+    msg.set_frame(FrameType::NoBox);
+    msg.set_label_size(12);
+    msg.set_label_color(Color::Black);
+    msg.set_align(Align::Center | Align::Inside);
+    msg.set_label(&format!("Language set to {}\n\nChanges will apply after logout.", locale));
+
+    let btn_y = dlg_h - 50;
+    let mut later_btn = Button::new(dlg_w - 180, btn_y, 75, 26, "Later");
+    later_btn.set_frame(widget_themes::OS_BUTTON_UP_BOX);
+    later_btn.set_label_size(11);
+
+    let mut logout_btn = Button::new(dlg_w - 95, btn_y, 75, 26, "Log Out");
+    logout_btn.set_frame(widget_themes::OS_BUTTON_UP_BOX);
+    logout_btn.set_label_size(11);
+    logout_btn.set_label_color(Color::from_hex(0x09554E));
+
+    let result = Rc::new(RefCell::new(None));
+    let ret = result.clone();
+    logout_btn.set_callback({
+        let ret = ret.clone();
+        move |_| {
+            *ret.borrow_mut() = Some(0);
+            app::quit();
+        }
+    });
+    later_btn.set_callback({
+        let ret = ret.clone();
+        move |_| {
+            *ret.borrow_mut() = Some(1);
+            app::quit();
+        }
+    });
+
+    win.end();
+    win.show();
+    let _ = app::run();
+
+    let ret = result.borrow().clone();
+    ret
+}
+
 fn main() {
     let theme = WidgetTheme::new(ThemeType::Aero);
     theme.apply();
@@ -353,11 +424,7 @@ fn main() {
             let loc = &apply_avail.borrow()[idx].1;
             match apply_locale(loc) {
                 Ok(()) => {
-                    let msg = format!(
-                        "Language set to:\n{}\n\nChanges will apply fully after logout.\n\nLog out now?",
-                        loc
-                    );
-                    if dialog::choice2_default(&msg, "Log Out", "Later", "") == Some(0) {
+                    if show_aero_msg(loc) == Some(0) {
                         logout_xfce();
                     }
                 }
@@ -368,5 +435,5 @@ fn main() {
 
     quit_btn.set_callback(move |_| app::quit());
 
-    app::run().unwrap();
+    let _ = app::run();
 }
