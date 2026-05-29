@@ -5,7 +5,7 @@ A GUI language switcher for XFCE with Aero-style theming, built with [fltk-rs](h
 Lists all available system locales with human-readable language and region
 names, and integrates into **XFCE Settings** as a standalone panel entry.
 
-Used for [xfce-aerolike](https://github.com/fiftydinar/xfce-aerolike/tree/main/recipes) project.
+Used for [xfce-aerolike](https://github.com/fiftydinar/xfce-aerolike/tree/main/recipes) project, but it can probably work for other distros too.
 
 ## Features
 
