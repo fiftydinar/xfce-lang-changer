@@ -28,11 +28,13 @@ jobs:
             ln -s /usr/bin/gcc /usr/local/bin/musl-gcc
             ln -s /usr/bin/g++ /usr/local/bin/musl-g++
 
-            # Patch fltk-sys to link system libs statically
+            # Download deps first, then patch fltk-sys, then build
+            cargo fetch
+
             FLTKSYS=\$(find /usr/local/cargo/registry/src -name 'link.rs' -path '*/fltk-sys-*')
-            echo \"Patching \$FLTKSYS ...\"
+            echo \"=== Patching \$FLTKSYS ===\"
             sed -i 's/cargo:rustc-link-lib=dylib=/cargo:rustc-link-lib=static=/g' \"\$FLTKSYS\"
-            grep 'link-lib=' \"\$FLTKSYS\" | head -20
+            grep 'link-lib=' \"\$FLTKSYS\"
 
             cargo build --release --target x86_64-unknown-linux-musl --no-default-features
 
