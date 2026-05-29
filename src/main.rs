@@ -240,6 +240,7 @@ fn main() {
     table.set_col_resize(false);
     table.set_row_header(false);
     table.set_col_header(false);
+    table.set_scrollbar_size(0);
 
     // Preselect current locale
     {
