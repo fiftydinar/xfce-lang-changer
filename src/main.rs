@@ -3,7 +3,8 @@ use fltk::{
     app, button::Button, dialog,
     enums::{Align, CallbackTrigger, Color, FrameType},
     frame::Frame, input::Input, prelude::*,
-    table::{TableContext, TableRow}, window::Window,
+    table::{TableContext, TableRow}, text::{TextBuffer, TextDisplay, WrapMode},
+    window::Window,
 };
 use fltk_theme::{widget_themes, WidgetTheme, ThemeType};
 
@@ -189,13 +190,15 @@ fn show_aero_alert(title: &str, msg: &str) {
         fltk::draw::draw_text2(&header_title, 0, 0, w, h, Align::Center | Align::Inside);
     });
 
-    let body = msg.to_string();
-    let mut label = Frame::new(30, 46, dlg_w - 60, dlg_h - 120, "");
-    label.set_frame(FrameType::NoBox);
-    label.set_label_size(12);
-    label.set_label_color(Color::Black);
-    label.set_align(Align::Left | Align::Inside);
-    label.set_label(&body);
+    let mut buf = TextBuffer::default();
+    buf.set_text(msg);
+    let mut text = TextDisplay::new(30, 46, dlg_w - 60, dlg_h - 120, "");
+    text.set_buffer(buf);
+    text.wrap_mode(WrapMode::AtBounds, 0);
+    text.set_text_font(fltk::enums::Font::by_name("Noto Sans"));
+    text.set_text_size(12);
+    text.set_text_color(Color::Black);
+    text.set_frame(FrameType::NoBox);
 
     let mut ok_btn = Button::new((dlg_w - 75) / 2, dlg_h - 46, 75, 26, "OK");
     ok_btn.set_label_size(11);
@@ -373,11 +376,11 @@ fn main() {
             .map(|(i, w)| format!("{}. {}", i + 1, w))
             .collect();
         let msg = format!(
-            "{}\n\nThe locale will still be written to:\n{}\n\nLog out and back in for changes to take effect.",
+            "{}\n\nThe app will now quit due to incompatibility issues.\n\nPlease fix the issues above and re-launch.",
             numbered.join("\n\n"),
-            config_dir().join("locale.conf").display(),
         );
         show_aero_alert("Compatibility Warning", &msg);
+        return;
     }
 
     let screen = app::screen_size();
