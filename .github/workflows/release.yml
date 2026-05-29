@@ -17,25 +17,20 @@ jobs:
 
       - name: Build static binary (Alpine musl)
         run: |
-          docker run --rm -v $PWD:/build -w /build alpine:latest sh -c "
+          docker run --rm -v $PWD:/build -w /build rust:alpine sh -c "
             apk add --no-cache \
               cmake build-base musl-dev pkgconfig \
               fontconfig-dev freetype-dev \
               libx11-dev libxext-dev libxft-dev \
               libxinerama-dev libxcursor-dev libxfixes-dev libxrender-dev \
-              pango-dev cairo-dev \
-              curl
+              pango-dev cairo-dev
 
             ln -s /usr/bin/gcc /usr/local/bin/musl-gcc
             ln -s /usr/bin/g++ /usr/local/bin/musl-g++
 
-            curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-            . /root/.cargo/env
-
-            echo "=== Default target ==="
+            echo \"=== Default target ===\"
             rustup show
 
-            echo \"=== Building for x86_64-unknown-linux-musl ===\"
             cargo build --release --target x86_64-unknown-linux-musl --no-default-features
 
             echo \"=== Binary type check ===\"
