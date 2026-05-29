@@ -44,7 +44,15 @@ jobs:
       - name: Verify static binary
         run: ldd release/xfce-lang-changer 2>&1 || true
 
+      - name: Upload artifacts
+        if: github.ref_type != 'tag'
+        uses: actions/upload-artifact@v4
+        with:
+          name: xfce-lang-changer
+          path: release/*
+
       - name: Create release
+        if: github.ref_type == 'tag'
         uses: softprops/action-gh-release@v2
         with:
           files: release/*
