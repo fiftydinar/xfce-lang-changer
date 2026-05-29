@@ -28,37 +28,11 @@ jobs:
             ln -s /usr/bin/gcc /usr/local/bin/musl-gcc
             ln -s /usr/bin/g++ /usr/local/bin/musl-g++
 
-            # Remove .so symlinks so linker can only find .a files
-            find /usr/lib -maxdepth 1 -name 'libX*.so*' -delete
-            find /usr/lib -maxdepth 1 -name 'libfontconfig*.so*' -delete
-            find /usr/lib -maxdepth 1 -name 'libfreetype*.so*' -delete
-            find /usr/lib -maxdepth 1 -name 'libpango*.so*' -delete
-            find /usr/lib -maxdepth 1 -name 'libcairo*.so*' -delete
-            find /usr/lib -maxdepth 1 -name 'libgobject*.so*' -delete
-            find /usr/lib -maxdepth 1 -name 'libglib*.so*' -delete
-            find /usr/lib -maxdepth 1 -name 'libgio*.so*' -delete
-            find /usr/lib -maxdepth 1 -name 'libgmodule*.so*' -delete
-            find /usr/lib -maxdepth 1 -name 'libpixman*.so*' -delete
-            find /usr/lib -maxdepth 1 -name 'libxcb*.so*' -delete
-            find /usr/lib -maxdepth 1 -name 'libXau*.so*' -delete
-            find /usr/lib -maxdepth 1 -name 'libXdmcp*.so*' -delete
-            find /usr/lib -maxdepth 1 -name 'libfribidi*.so*' -delete
-            find /usr/lib -maxdepth 1 -name 'libthai*.so*' -delete
-            find /usr/lib -maxdepth 1 -name 'libdatrie*.so*' -delete
-            find /usr/lib -maxdepth 1 -name 'libharfbuzz*.so*' -delete
-            find /usr/lib -maxdepth 1 -name 'libpng*.so*' -delete
-            find /usr/lib -maxdepth 1 -name 'libbz2*.so*' -delete
-            find /usr/lib -maxdepth 1 -name 'libexpat*.so*' -delete
-            find /usr/lib -maxdepth 1 -name 'libz*.so*' -delete
-            find /usr/lib -maxdepth 1 -name 'libffi*.so*' -delete
-            find /usr/lib -maxdepth 1 -name 'libbrotli*.so*' -delete
-            find /usr/lib -maxdepth 1 -name 'libgraphite2*.so*' -delete
-            find /usr/lib -maxdepth 1 -name 'libpcre2*.so*' -delete
-            find /usr/lib -maxdepth 1 -name 'libselinux*.so*' -delete
-            find /usr/lib -maxdepth 1 -name 'libmount*.so*' -delete
-            find /usr/lib -maxdepth 1 -name 'libblkid*.so*' -delete
-            find /usr/lib -maxdepth 1 -name 'libmd*.so*' -delete
-            find /usr/lib -maxdepth 1 -name 'libbsd*.so*' -delete
+            # Patch fltk-sys to link system libs statically
+            FLTKSYS=\$(find /usr/local/cargo/registry/src -name 'link.rs' -path '*/fltk-sys-*')
+            echo \"Patching \$FLTKSYS ...\"
+            sed -i 's/cargo:rustc-link-lib=dylib=/cargo:rustc-link-lib=static=/g' \"\$FLTKSYS\"
+            grep 'link-lib=' \"\$FLTKSYS\" | head -20
 
             cargo build --release --target x86_64-unknown-linux-musl --no-default-features
 
