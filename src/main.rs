@@ -1,4 +1,4 @@
-use std::{cell::RefCell, process::Command, rc::Rc};
+use std::{cell::RefCell, path::PathBuf, process::Command, rc::Rc};
 use fltk::{
     app, button::Button, dialog,
     enums::{Align, CallbackTrigger, Color, FrameType},
@@ -9,13 +9,11 @@ use fltk_theme::{widget_themes, WidgetTheme, ThemeType};
 
 const AERO_BORDER: Color = Color::from_hex(0x09554E);
 
-fn config_dir() -> std::path::PathBuf {
-    if let Ok(xdg) = std::env::var("XDG_CONFIG_HOME") {
-        std::path::PathBuf::from(xdg)
-    } else {
+fn config_dir() -> PathBuf {
+    dirs::config_dir().unwrap_or_else(|| {
         let home = std::env::var("HOME").unwrap_or_default();
-        std::path::PathBuf::from(home).join(".config")
-    }
+        PathBuf::from(home).join(".config")
+    })
 }
 
 fn get_current_locale() -> String {
@@ -81,11 +79,12 @@ fn lang_name(code: &str) -> String {
     }
 }
 
-fn country_name(code: &str) -> &str {
+fn country_name(code: &str, lang: &str) -> String {
     let code = code.split('@').next().unwrap_or(code);
-    rust_iso3166::from_alpha2(code)
-        .map(|c| c.name)
-        .unwrap_or(code)
+    use i18n_country_translations::*;
+    let _ = register_locale(lang);
+    get_name_for_locale(lang, code)
+        .unwrap_or_else(|| rust_iso3166::from_alpha2(code).map(|c| c.name).unwrap_or(code).to_string())
 }
 
 fn locale_to_human_name(locale: &str) -> String {
@@ -96,12 +95,28 @@ fn locale_to_human_name(locale: &str) -> String {
 
     let lang_name = lang_name(lang_code);
     let region_name = if !region_code.is_empty() {
-        let c = country_name(region_code);
+        let c = country_name(region_code, lang_code);
         format!(" ({})", c)
     } else {
         String::new()
     };
     format!("{}{}", lang_name, region_name)
+}
+
+fn is_cyrillic(c: char) -> bool {
+    matches!(c, '\u{0400}'..='\u{04FF}' | '\u{0500}'..='\u{052F}')
+}
+
+fn transliterate(s: &str) -> String {
+    use cyrla::ConverterBuilder;
+    use std::sync::OnceLock;
+    static CONVERTER: OnceLock<cyrla::Converter> = OnceLock::new();
+    let converter = CONVERTER.get_or_init(|| ConverterBuilder::new().build());
+    if s.contains(is_cyrillic) {
+        converter.cyr_to_lat(s)
+    } else {
+        converter.lat_to_cyr(s)
+    }
 }
 
 fn apply_locale(locale: &str) -> Result<(), String> {
@@ -381,10 +396,13 @@ fn main() {
     filter_inp.set_trigger(CallbackTrigger::Changed);
     filter_inp.set_callback(move |inp| {
         let q = inp.value().to_lowercase();
+        let q_alt = transliterate(&q);
         let mut new_vis = Vec::new();
         let avail = filter_avail.borrow();
         for (i, (human, loc)) in avail.iter().enumerate() {
-            if q.is_empty() || human.to_lowercase().contains(&q) || loc.to_lowercase().contains(&q) {
+            let h = human.to_lowercase();
+            let l = loc.to_lowercase();
+            if q.is_empty() || h.contains(&q) || l.contains(&q) || h.contains(&q_alt) || l.contains(&q_alt) {
                 new_vis.push(i);
             }
         }
