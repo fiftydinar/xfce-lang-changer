@@ -195,11 +195,23 @@ fn main() {
     let body_y = 68;
     let body_h = buf_h - body_y - 8;
 
-    let mut curr_label = Frame::new(20, body_y, buf_w - 40, 24, "");
-    curr_label.set_label_size(13);
-    curr_label.set_label_color(Color::Black);
-    curr_label.set_align(Align::Center | Align::Inside);
-    curr_label.set_label(&format!("Current: {} - {}", locale_to_human_name(&current), current));
+    let curr = current.clone();
+    let mut curr_label = Frame::new(20, body_y, buf_w - 40, 28, "");
+    curr_label.set_frame(FrameType::NoBox);
+    curr_label.draw(move |f| {
+        let w = f.w();
+        let h = f.h();
+        fltk::draw::draw_rect_fill(0, 0, w, h, Color::from_hex(0xE8F0EE));
+        fltk::draw::draw_rect_fill(0, 0, 3, h, AERO_BORDER);
+        let bold = fltk::enums::Font::by_name("Noto Sans Bold");
+        fltk::draw::set_font(bold, 13);
+        fltk::draw::set_draw_color(Color::from_hex(0x09554E));
+        fltk::draw::draw_text2(
+            &format!("Current: {} - {}", locale_to_human_name(&curr), curr),
+            0, 0, w, h,
+            Align::Center | Align::Inside,
+        );
+    });
 
     // Search/filter label
     let mut search_label = Frame::new(20, body_y + 25, buf_w - 40, 16, "Search languages...");
