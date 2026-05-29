@@ -258,7 +258,7 @@ fn main() {
                     fltk::draw::draw_rect_fill(x, y, w, h, Color::White);
                 }
                 TableContext::EndPage => {
-                    fltk::draw::set_draw_color(AERO_BORDER);
+                    fltk::draw::set_draw_color(Color::from_hex(0x9AABB8));
                     fltk::draw::draw_rect(x, y, w, h);
                 }
                 _ => {
