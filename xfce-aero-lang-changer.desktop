@@ -1,6 +1,6 @@
 [Desktop Entry]
 Version=1.0
-Name=Languages
+Name=Language
 Comment=Change the system language
 Exec=/usr/bin/xfce-aero-lang-changer
 Icon=preferences-desktop-locale
