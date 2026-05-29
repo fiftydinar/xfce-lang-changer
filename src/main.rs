@@ -8,7 +8,6 @@ use fltk::{
 use fltk_theme::{widget_themes, WidgetTheme, ThemeType};
 
 const AERO_BORDER: Color = Color::from_hex(0x09554E);
-const AERO_HEADER_SUBTITLE: Color = Color::from_hex(0xFFFFFF);
 
 fn config_dir() -> std::path::PathBuf {
     if let Ok(xdg) = std::env::var("XDG_CONFIG_HOME") {
@@ -180,10 +179,15 @@ fn main() {
             let b = (92u8 as f64 * (1.0 - t) + 136u8 as f64 * t) as u8;
             fltk::draw::draw_rect_fill(0, y, w, 1, Color::from_rgb(r, g, b));
         }
+        let bold = fltk::enums::Font::by_name("Noto Sans Bold");
+        fltk::draw::set_font(bold, 16);
         fltk::draw::set_draw_color(Color::White);
-        fltk::draw::draw_text2("Language Changer", 0, 0, w, 24, Align::Center | Align::Inside);
-        fltk::draw::set_draw_color(AERO_HEADER_SUBTITLE);
-        fltk::draw::draw_text2("Change your system language", 0, 20, w, 20, Align::Center | Align::Inside);
+        fltk::draw::draw_text2("Language Changer", 0, 10, w, 26, Align::Center | Align::Inside);
+        let reg = fltk::enums::Font::by_name("Noto Sans");
+        fltk::draw::set_font(reg, 11);
+        fltk::draw::set_draw_color(Color::from_hex(0xA0D0CC));
+        fltk::draw::draw_text2("Change your system language", 0, 32, w, 20, Align::Center | Align::Inside);
+        fltk::draw::set_draw_color(AERO_BORDER);
         fltk::draw::draw_rect_fill(0, h - 1, w, 1, AERO_BORDER);
     });
 
