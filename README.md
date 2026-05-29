@@ -26,7 +26,7 @@ Used for [xfce-aerolike](https://github.com/fiftydinar/xfce-aerolike/tree/main/r
 - XFCE desktop environment
 - System locales generated (see `locale -a` / `locale.gen`)
 - [fltk](https://archlinux.org/packages/extra/x86_64/fltk/) system package for dynamic linking
-- Noto Sans font family for proper RTL and wide script support
+- [Noto Sans](https://archlinux.org/packages/extra/any/noto-sans/) font recommended for proper RTL and wide script support (falls back to default FLTK font if missing)
 
 ## Build & Install
 
