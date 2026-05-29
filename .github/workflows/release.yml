@@ -33,9 +33,15 @@ jobs:
 
             cargo build --release --target x86_64-unknown-linux-musl --no-default-features
 
+            echo \"=== Rebuilding final binary fully static ===\"
+            cargo rustc --release -p xfce-lang-changer --target x86_64-unknown-linux-musl \
+              --no-default-features -- -C link-arg=-static -C link-arg=-Wl,-Bstatic
+
             echo \"=== Binary type check ===\"
             file /build/target/x86_64-unknown-linux-musl/release/xfce-lang-changer
             readelf -d /build/target/x86_64-unknown-linux-musl/release/xfce-lang-changer | grep -E 'NEEDED|RUNPATH|RPATH'
+            echo \"=== ldd check ===\"
+            ldd /build/target/x86_64-unknown-linux-musl/release/xfce-lang-changer 2>&1 || true
           "
 
       - name: Prepare release assets
@@ -49,6 +55,7 @@ jobs:
         run: |
           file release/xfce-lang-changer
           readelf -d release/xfce-lang-changer | grep NEEDED
+          ldd release/xfce-lang-changer 2>&1 || true
 
       - name: Upload artifacts
         if: github.ref_type != 'tag'
