@@ -5,7 +5,7 @@ A language picker alternative for Arch + XFCE X11 desktops, built with FLTK in A
 Presents all generated system languages in a table with native names. Filter as you type with built-in Latin ↔ Cyrillic transliteration. Selecting a language writes it to `locale.conf` and offers to log out so the change takes effect on next login.
 
 Made primarely for the purposes of my XFCE custom image distribution:  
-https://github.com/fiftydinar/xfce-aero-lang-changer
+https://github.com/fiftydinar/xfce-aerolike
 
 ```sh
 make && sudo make install
