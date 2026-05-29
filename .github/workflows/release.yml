@@ -19,7 +19,8 @@ jobs:
 
       - name: Build static binary
         run: |
-          RUSTFLAGS="-C target-feature=+crt-static" cargo build --release
+          cargo build --release
+          cargo rustc --release -p xfce-lang-changer -- -C target-feature=+crt-static
 
       - name: Prepare release assets
         run: |
