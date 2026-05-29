@@ -399,11 +399,13 @@ fn main() {
 
     let mut apply_btn = Button::new(buf_w - 100, btn_area_y, 80, 23, "Apply");
     apply_btn.set_label_size(11);
-    apply_btn.set_label_color(Color::from_hex(0x09554E));
+    apply_btn.set_label_color(Color::Black);
+    apply_btn.set_frame(widget_themes::OS_BUTTON_UP_BOX);
 
     let mut quit_btn = Button::new(20, btn_area_y, 80, 23, "Quit");
     quit_btn.set_label_size(11);
     quit_btn.set_label_color(Color::Black);
+    quit_btn.set_frame(widget_themes::OS_BUTTON_UP_BOX);
 
     win.end();
     win.show();
