@@ -156,11 +156,9 @@ fn show_aero_msg(locale: &str) -> Option<i32> {
 
     let btn_y = dlg_h - 50;
     let mut later_btn = Button::new(dlg_w - 180, btn_y, 75, 26, "Later");
-    later_btn.set_frame(widget_themes::OS_BUTTON_UP_BOX);
     later_btn.set_label_size(11);
 
     let mut logout_btn = Button::new(dlg_w - 95, btn_y, 75, 26, "Log Out");
-    logout_btn.set_frame(widget_themes::OS_BUTTON_UP_BOX);
     logout_btn.set_label_size(11);
     logout_btn.set_label_color(Color::Red);
 
@@ -401,13 +399,11 @@ fn main() {
 
     let mut apply_btn = Button::new(buf_w - 100, btn_area_y, 80, 23, "Apply");
     apply_btn.set_label_size(11);
-    apply_btn.set_label_color(Color::Black);
-    apply_btn.set_frame(widget_themes::OS_BUTTON_UP_BOX);
+    apply_btn.set_label_color(Color::from_hex(0x09554E));
 
     let mut quit_btn = Button::new(20, btn_area_y, 80, 23, "Quit");
     quit_btn.set_label_size(11);
     quit_btn.set_label_color(Color::Black);
-    quit_btn.set_frame(widget_themes::OS_BUTTON_UP_BOX);
 
     win.end();
     win.show();
