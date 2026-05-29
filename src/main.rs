@@ -230,7 +230,6 @@ fn main() {
     let mut table = TableRow::new(20, list_y, buf_w - 40, list_h, "");
     table.set_table_frame(FrameType::NoBox);
     table.set_type(TableRowSelectMode::Single);
-    table.clear_visible_focus();
     table.end();
     table.set_rows(visible.borrow().len() as i32);
     table.set_cols(2);
@@ -322,17 +321,16 @@ fn main() {
             let row = tbl.callback_row();
             if row >= 0 && (row as usize) < vis.borrow().len() {
                 *sel.borrow_mut() = row;
-                tbl.set_top_row(0);
                 tbl.redraw();
             }
         });
     }
 
     table.handle(|_, event| {
-        match event {
-            Event::Push | Event::Released => false,
-            _ => true,
+        if event == Event::Drag || event == Event::MouseWheel {
+            return true;
         }
+        false
     });
 
     // Filter callback
