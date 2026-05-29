@@ -162,7 +162,7 @@ fn show_aero_msg(locale: &str) -> Option<i32> {
     let mut logout_btn = Button::new(dlg_w - 95, btn_y, 75, 26, "Log Out");
     logout_btn.set_frame(widget_themes::OS_BUTTON_UP_BOX);
     logout_btn.set_label_size(11);
-    logout_btn.set_label_color(Color::from_hex(0x09554E));
+    logout_btn.set_label_color(Color::Red);
 
     let result = Rc::new(RefCell::new(None));
     let ret = result.clone();
