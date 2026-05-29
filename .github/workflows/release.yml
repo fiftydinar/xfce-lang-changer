@@ -19,6 +19,7 @@ jobs:
               cmake build-base musl-dev pkgconfig \
               fontconfig-dev freetype-dev \
               libx11-dev libxext-dev libxft-dev \
+              libxinerama-dev libxcursor-dev libxfixes-dev libxrender-dev \
               pango-dev cairo-dev \
               curl
 
