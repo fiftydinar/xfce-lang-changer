@@ -203,9 +203,14 @@ fn main() {
     table.end();
     table.set_rows(visible.borrow().len() as i32);
     table.set_cols(2);
-    let col0_w = ((buf_w - 40) as f32 * 0.75) as i32;
-    table.set_col_width(0, col0_w);
-    table.set_col_width(1, (buf_w - 40) - col0_w - 1);
+    let table_w = buf_w - 40;
+    let font = fltk::enums::Font::by_name("Noto Sans");
+    fltk::draw::set_font(font, 13);
+    let max_code_w = available.borrow().iter().map(|(_, loc)| fltk::draw::width(loc) as i32).max().unwrap_or(0);
+    let col1_w = max_code_w + 12;
+    let col0_w = table_w - col1_w - 1;
+    table.set_col_width(0, col0_w.max(1));
+    table.set_col_width(1, col1_w);
     table.set_row_resize(false);
     table.set_col_resize(false);
     table.set_row_header(false);
