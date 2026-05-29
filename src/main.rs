@@ -106,30 +106,6 @@ fn apply_locale(locale: &str) -> Result<(), String> {
     std::fs::write(config_dir.join("locale.conf"), format!("LANG={}\n", locale))
         .map_err(|e| format!("Cannot write locale.conf: {}", e))?;
 
-    let env_dir = config_dir.join("environment.d");
-    std::fs::create_dir_all(&env_dir).map_err(|e| format!("Cannot create environment.d: {}", e))?;
-    std::fs::write(env_dir.join("99-lang.conf"), format!("LANG={}\n", locale))
-        .map_err(|e| format!("Cannot write environment config: {}", e))?;
-
-    let xfce4_dir = config_dir.join("xfce4");
-    std::fs::create_dir_all(&xfce4_dir).ok();
-    let env_path = xfce4_dir.join("environment");
-    let mut env_content = String::new();
-    if let Ok(existing) = std::fs::read_to_string(&env_path) {
-        for line in existing.lines() {
-            if !line.starts_with("LANG=") {
-                env_content.push_str(line);
-                env_content.push('\n');
-            }
-        }
-    }
-    env_content.push_str(&format!("LANG={}\n", locale));
-    std::fs::write(&env_path, env_content).ok();
-
-    Command::new("systemctl")
-        .args(["--user", "set-environment", &format!("LANG={}", locale)])
-        .output().ok();
-
     Ok(())
 }
 
