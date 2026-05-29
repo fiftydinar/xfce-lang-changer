@@ -367,7 +367,7 @@ fn main() {
               or the system image may not have them.\n\n\
               See: cat /etc/locale.gen",
         );
-        return;
+        std::process::exit(1);
     }
 
     let warnings = env_check();
@@ -380,7 +380,7 @@ fn main() {
             numbered.join("\n\n"),
         );
         show_aero_alert("Compatibility Warning", &msg);
-        return;
+        std::process::exit(1);
     }
 
     let screen = app::screen_size();
