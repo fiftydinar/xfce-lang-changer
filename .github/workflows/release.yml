@@ -16,9 +16,10 @@ jobs:
         run: |
           docker run --rm -v $PWD:/build -w /build alpine:latest sh -c "
             apk add --no-cache \
-              cmake g++ musl-dev pkgconfig \
+              cmake build-base musl-dev pkgconfig \
               fontconfig-dev freetype-dev \
               libx11-dev libxext-dev libxft-dev \
+              pango-dev cairo-dev \
               curl
 
             curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
