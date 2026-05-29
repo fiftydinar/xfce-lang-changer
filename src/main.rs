@@ -72,9 +72,6 @@ fn get_available_locales() -> Vec<(String, String)> {
 }
 
 fn lang_name(code: &str, prefer_latin: bool) -> String {
-    if code == "sr" && prefer_latin {
-        return "srpski".to_string();
-    }
     if let Some(lang) = isolang::Language::from_639_1(code) {
         if let Some(autonym) = lang.to_autonym() {
             if prefer_latin && !autonym.is_ascii() {
