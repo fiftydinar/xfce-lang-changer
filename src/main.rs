@@ -184,15 +184,15 @@ fn main() {
     let body_h = buf_h - body_y - 8;
 
     let mut curr_label = Frame::new(20, body_y, buf_w - 40, 24, "");
-    curr_label.set_frame(FrameType::BorderBox);
+    curr_label.set_frame(FrameType::ThinDownBox);
+    curr_label.set_color(Color::White);
     curr_label.set_label_size(13);
     curr_label.set_label_color(Color::from_hex(0x09554E));
     curr_label.set_align(Align::Center | Align::Inside);
     curr_label.set_label(&format!("Current: {} - {}", locale_to_human_name(&current), current));
-    curr_label.set_label(&format!("Current: {} - {}", locale_to_human_name(&current), current));
 
     // Search/filter label
-    let mut search_label = Frame::new(20, body_y + 25, buf_w - 40, 16, "Search languages...");
+    let mut search_label = Frame::new(20, body_y + 25, buf_w - 40, 16, "🔍  Search languages...");
     search_label.set_label_size(10);
     search_label.set_label_color(Color::from_hex(0x888888));
     search_label.set_align(Align::Left | Align::Inside);
