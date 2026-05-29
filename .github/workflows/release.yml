@@ -22,6 +22,10 @@ jobs:
               pango-dev cairo-dev \
               curl
 
+            # On Alpine, gcc/g++ are already musl-based; symlink for fltk-sys
+            ln -s /usr/bin/gcc /usr/local/bin/musl-gcc
+            ln -s /usr/bin/g++ /usr/local/bin/musl-g++
+
             curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
             . /root/.cargo/env
             rustup target add x86_64-unknown-linux-musl
