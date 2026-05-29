@@ -205,7 +205,7 @@ fn main() {
     table.set_cols(2);
     let table_w = buf_w - 40;
     let max_code_len = available.borrow().iter().map(|(_, loc)| loc.len()).max().unwrap_or(0);
-    let col1_w = (max_code_len as f64 * 7.5 + 16.0) as i32;
+    let col1_w = (max_code_len as i32 * 7 + 4).max(1);
     let col0_w = (table_w - col1_w - 1).max(1);
     table.set_col_width(0, col0_w);
     table.set_col_width(1, col1_w);
@@ -275,7 +275,8 @@ fn main() {
                     fltk::draw::set_draw_color(fg);
 
                     let text = if col == 0 { human } else { loc };
-                    fltk::draw::draw_text2(text, x + 4, y, w - 4, h, Align::Left | Align::Inside);
+                    let align = if col == 0 { Align::Left } else { Align::Right };
+                    fltk::draw::draw_text2(text, x + 4, y, w - 4, h, align | Align::Inside);
 
                     fltk::draw::set_draw_color(Color::from_hex(0xD8DDE3));
                     fltk::draw::draw_rect_fill(x, y + h - 1, w, 1, Color::from_hex(0xD8DDE3));
