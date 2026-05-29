@@ -1,7 +1,7 @@
 use std::{cell::RefCell, process::Command, rc::Rc};
 use fltk::{
     app, button::Button, dialog,
-    enums::{Align, CallbackTrigger, Color, Event, FrameType},
+    enums::{Align, CallbackTrigger, Color, FrameType},
     frame::Frame, input::Input, prelude::*,
     table::{TableContext, TableRow, TableRowSelectMode}, window::Window,
 };
@@ -325,13 +325,6 @@ fn main() {
             }
         });
     }
-
-    table.handle(|_, event| {
-        if event == Event::Drag {
-            return true;
-        }
-        false
-    });
 
     // Filter callback
     let filter_vis = visible.clone();
