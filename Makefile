@@ -22,11 +22,11 @@ $(BINARY): build
 
 install: $(BINARY)
 	install -Dm755 $(BINARY) $(DESTDIR)$(BINDIR)/xfce-aero-lang-changer
-	install -dm755 $(DESTDIR)$(APPDIR)
-	while IFS= read -r line || [ -n "$line" ]; do \
-		case "$line" in \
+	mkdir -p $(DESTDIR)$(APPDIR)
+	while IFS= read -r line || [ -n "$$line" ]; do \
+		case "$$line" in \
 			Exec=*) echo "Exec=$(BINDIR)/xfce-aero-lang-changer" ;; \
-			*) echo "$line" ;; \
+			*) echo "$$line" ;; \
 		esac; \
 	done < xfce-aero-lang-changer.desktop > $(DESTDIR)$(APPDIR)/xfce-aero-lang-changer.desktop
 
