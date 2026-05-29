@@ -1,4 +1,4 @@
-# Maintainer: fiftydinar <fiftydinar@tuta.io>
+# Maintainer: fiftydinar <srbaizoki4@tuta.io>
 
 pkgname=xfce-aero-lang-changer
 pkgver=1.0.0
