@@ -33,7 +33,12 @@ jobs:
 
             FLTKSYS=\$(find /usr/local/cargo/registry/src -name 'link.rs' -path '*/fltk-sys-*')
             echo \"=== Patching \$FLTKSYS ===\"
-            sed -i 's/cargo:rustc-link-lib=dylib=/cargo:rustc-link-lib=static=/g' \"\$FLTKSYS\"
+            # Change GUI libs to static (NOT pthread, which is part of musl libc)
+            sed -i 's/cargo:rustc-link-lib=dylib=X/cargo:rustc-link-lib=static=X/g' \"\$FLTKSYS\"
+            sed -i 's/cargo:rustc-link-lib=dylib=fontconfig/cargo:rustc-link-lib=static=fontconfig/g' \"\$FLTKSYS\"
+            sed -i 's/cargo:rustc-link-lib=dylib=pango/cargo:rustc-link-lib=static=pango/g' \"\$FLTKSYS\"
+            sed -i 's/cargo:rustc-link-lib=dylib=gobject/cargo:rustc-link-lib=static=gobject/g' \"\$FLTKSYS\"
+            sed -i 's/cargo:rustc-link-lib=dylib=cairo/cargo:rustc-link-lib=static=cairo/g' \"\$FLTKSYS\"
             grep 'link-lib=' \"\$FLTKSYS\"
 
             cargo build --release --target x86_64-unknown-linux-musl --no-default-features
