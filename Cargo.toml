@@ -3,6 +3,10 @@ name = "xfce-lang-changer"
 version = "1.0.0"
 edition = "2021"
 
+[features]
+default = ["bundled"]
+bundled = ["fltk/fltk-bundled"]
+
 [dependencies]
 fltk = { version = "1" }
 fltk-theme = "0.7"
