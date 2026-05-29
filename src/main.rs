@@ -320,8 +320,8 @@ fn env_check() -> Vec<String> {
 
     if which::which("gsettings").is_ok() {
         let de = std::env::var("XDG_CURRENT_DESKTOP").unwrap_or_default();
-        if de.eq_ignore_ascii_case("gnome") || de.contains("GNOME") || de.contains("Budgie") || de.contains("Cinnamon") || de.eq_ignore_ascii_case("x-cinnamon") {
-            let de_name = if de.contains("Budgie") { "GNOME/Budgie" } else if de.contains("Cinnamon") || de.eq_ignore_ascii_case("x-cinnamon") { "Cinnamon" } else { "GNOME" };
+        if de.eq_ignore_ascii_case("gnome") || de.contains("GNOME") || de.contains("Budgie") || de.contains("Cinnamon") || de.eq_ignore_ascii_case("x-cinnamon") || de.eq_ignore_ascii_case("mate") || de.contains("MATE") || de.eq_ignore_ascii_case("pantheon") || de.contains("Pantheon") || de.eq_ignore_ascii_case("ukui") || de.contains("UKUI") {
+            let de_name = if de.contains("Budgie") { "GNOME/Budgie" } else if de.contains("Cinnamon") || de.eq_ignore_ascii_case("x-cinnamon") { "Cinnamon" } else if de.contains("MATE") || de.eq_ignore_ascii_case("mate") { "MATE" } else if de.contains("Pantheon") || de.eq_ignore_ascii_case("pantheon") { "Pantheon" } else if de.contains("UKUI") || de.eq_ignore_ascii_case("ukui") { "UKUI" } else { "GNOME" };
             warnings.push(
                 format!("\"{}\" DE may override locale via gsettings.\nChanges may be ignored after login.", de_name),
             );
@@ -331,6 +331,13 @@ fn env_check() -> Vec<String> {
     if config_dir().join("plasma-localerc").exists() {
         warnings.push(
             "KDE plasma-localerc found — may override\nsystem locale after login.".to_string(),
+        );
+    }
+
+    let dde_env = dirs::home_dir().unwrap_or_default().join(".dde_env");
+    if dde_env.exists() {
+        warnings.push(
+            "Deepin ~/.dde_env found — may override\nsystem locale after login.".to_string(),
         );
     }
 
