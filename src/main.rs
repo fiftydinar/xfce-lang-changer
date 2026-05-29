@@ -203,7 +203,7 @@ fn main() {
     table.end();
     table.set_rows(visible.borrow().len() as i32);
     table.set_cols(2);
-    let col0_w = ((buf_w - 40) as f32 * 0.55) as i32;
+    let col0_w = ((buf_w - 40) as f32 * 0.71) as i32;
     table.set_col_width(0, col0_w);
     table.set_col_width(1, (buf_w - 40) - col0_w - 1);
     table.set_row_resize(false);
