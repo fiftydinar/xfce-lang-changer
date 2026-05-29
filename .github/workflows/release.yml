@@ -15,28 +15,65 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install dependencies
+      - name: Build fully static binary (Alpine musl)
         run: |
-          sudo apt-get update
-          sudo apt-get install -y cmake pkg-config \
-            libx11-dev libxext-dev libxft-dev \
-            libxinerama-dev libxcursor-dev libxfixes-dev libxrender-dev \
-            libfontconfig-dev libfreetype-dev \
-            libpango1.0-dev libcairo2-dev
+          docker run --rm -v $PWD:/build -w /build rust:alpine sh -c "
+            apk add --no-cache \
+              cmake build-base musl-dev pkgconfig \
+              fontconfig-dev freetype-dev \
+              libx11-dev libxext-dev libxft-dev \
+              libxinerama-dev libxcursor-dev libxfixes-dev libxrender-dev \
+              pango-dev cairo-dev
 
-      - name: Build static binary
-        run: |
-          # Step 1: Build all deps (proc-macros without +crt-static)
-          cargo build --release
+            ln -s /usr/bin/gcc /usr/local/bin/musl-gcc
+            ln -s /usr/bin/g++ /usr/local/bin/musl-g++
 
-          # Step 2: Rebuild final binary with static glibc linking
-          RUSTFLAGS="-C target-feature=+crt-static" cargo rustc --release \
-            -p xfce-lang-changer
+            # Remove .so symlinks so linker can only find .a files
+            find /usr/lib -maxdepth 1 -name 'libX*.so*' -delete
+            find /usr/lib -maxdepth 1 -name 'libfontconfig*.so*' -delete
+            find /usr/lib -maxdepth 1 -name 'libfreetype*.so*' -delete
+            find /usr/lib -maxdepth 1 -name 'libpango*.so*' -delete
+            find /usr/lib -maxdepth 1 -name 'libcairo*.so*' -delete
+            find /usr/lib -maxdepth 1 -name 'libgobject*.so*' -delete
+            find /usr/lib -maxdepth 1 -name 'libglib*.so*' -delete
+            find /usr/lib -maxdepth 1 -name 'libgio*.so*' -delete
+            find /usr/lib -maxdepth 1 -name 'libgmodule*.so*' -delete
+            find /usr/lib -maxdepth 1 -name 'libpixman*.so*' -delete
+            find /usr/lib -maxdepth 1 -name 'libxcb*.so*' -delete
+            find /usr/lib -maxdepth 1 -name 'libXau*.so*' -delete
+            find /usr/lib -maxdepth 1 -name 'libXdmcp*.so*' -delete
+            find /usr/lib -maxdepth 1 -name 'libfribidi*.so*' -delete
+            find /usr/lib -maxdepth 1 -name 'libthai*.so*' -delete
+            find /usr/lib -maxdepth 1 -name 'libdatrie*.so*' -delete
+            find /usr/lib -maxdepth 1 -name 'libharfbuzz*.so*' -delete
+            find /usr/lib -maxdepth 1 -name 'libpng*.so*' -delete
+            find /usr/lib -maxdepth 1 -name 'libbz2*.so*' -delete
+            find /usr/lib -maxdepth 1 -name 'libexpat*.so*' -delete
+            find /usr/lib -maxdepth 1 -name 'libz*.so*' -delete
+            find /usr/lib -maxdepth 1 -name 'libffi*.so*' -delete
+            find /usr/lib -maxdepth 1 -name 'libbrotli*.so*' -delete
+            find /usr/lib -maxdepth 1 -name 'libgraphite2*.so*' -delete
+            find /usr/lib -maxdepth 1 -name 'libpcre2*.so*' -delete
+            find /usr/lib -maxdepth 1 -name 'libselinux*.so*' -delete
+            find /usr/lib -maxdepth 1 -name 'libmount*.so*' -delete
+            find /usr/lib -maxdepth 1 -name 'libblkid*.so*' -delete
+            find /usr/lib -maxdepth 1 -name 'libmd*.so*' -delete
+            find /usr/lib -maxdepth 1 -name 'libbsd*.so*' -delete
+
+            cargo build --release --target x86_64-unknown-linux-musl --no-default-features
+
+            echo \"=== Binary check ===\"
+            file /build/target/x86_64-unknown-linux-musl/release/xfce-lang-changer
+            readelf -d /build/target/x86_64-unknown-linux-musl/release/xfce-lang-changer | grep NEEDED
+            echo \"=== ldd check ===\"
+            ldd /build/target/x86_64-unknown-linux-musl/release/xfce-lang-changer 2>&1 || true
+          "
 
       - name: Prepare release assets
         run: |
+          sudo chown -R $(whoami) target/
           mkdir -p release
-          cp target/release/xfce-lang-changer release/
+          cp target/x86_64-unknown-linux-musl/release/xfce-lang-changer release/
           cp xfce-lang-changer.desktop release/
 
       - name: Check binary
