@@ -184,15 +184,10 @@ fn main() {
     search_label.set_label_color(Color::from_hex(0x888888));
     search_label.set_align(Align::Left | Align::Inside);
 
-    let mut filter_inp = Input::new(20, body_y + 40, buf_w - 115, 23, "");
+    let mut filter_inp = Input::new(20, body_y + 40, buf_w - 40, 23, "");
     filter_inp.set_text_size(11);
     filter_inp.set_text_color(Color::Black);
     filter_inp.set_frame(widget_themes::OS_DEFAULT_BUTTON_UP_BOX);
-
-    let mut refresh_btn = Button::new(buf_w - 85, body_y + 40, 65, 23, "Refresh");
-    refresh_btn.set_label_size(11);
-    refresh_btn.set_label_color(Color::Black);
-    refresh_btn.set_frame(widget_themes::OS_BUTTON_UP_BOX);
 
     // Locale table
     let list_y = body_y + 72;
@@ -363,32 +358,6 @@ fn main() {
     });
 
     quit_btn.set_callback(move |_| app::quit());
-
-    // Refresh callback
-    let ref_avail = available.clone();
-    let ref_vis = visible.clone();
-    let ref_sel = selected.clone();
-    let mut ref_tbl = table.clone();
-    let mut ref_label = curr_label.clone();
-    let ref_inp = filter_inp.clone();
-    refresh_btn.set_callback(move |_| {
-        let new_list = get_available_locales();
-        *ref_avail.borrow_mut() = new_list;
-        let q = ref_inp.value().to_lowercase();
-        let mut new_vis = Vec::new();
-        let avail = ref_avail.borrow();
-        for (i, (human, loc)) in avail.iter().enumerate() {
-            if q.is_empty() || human.to_lowercase().contains(&q) || loc.to_lowercase().contains(&q) {
-                new_vis.push(i);
-            }
-        }
-        *ref_vis.borrow_mut() = new_vis;
-        *ref_sel.borrow_mut() = -1;
-        ref_tbl.set_rows(ref_vis.borrow().len() as i32);
-        ref_tbl.redraw();
-        let new_current = get_current_locale();
-        ref_label.set_label(&format!("Current: {} - {}", locale_to_human_name(&new_current), new_current));
-    });
 
     app::run().unwrap();
 }
