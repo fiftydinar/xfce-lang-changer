@@ -6,12 +6,17 @@ APPDIR ?= $(DATADIR)/applications
 TARGET ?= release
 BINARY := target/$(TARGET)/xfce-lang-changer
 
+# Linking mode: static (bundled fltk) or dynamic (system fltk)
+LINK ?= dynamic
+CARGO_ARGS := --release
+CARGO_ARGS += $(if $(filter dynamic,$(LINK)),--no-default-features,--features bundled)
+
 .PHONY: all build install uninstall clean
 
 all: build
 
 build:
-	cargo build --release
+	cargo build $(CARGO_ARGS)
 
 $(BINARY): build
 

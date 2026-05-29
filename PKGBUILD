@@ -7,17 +7,7 @@ pkgdesc="GUI language switcher for XFCE with Aero-style theming"
 arch=('x86_64')
 url="https://github.com/fiftydinar/xfce-lang-changer"
 license=('Apache-2.0')
-depends=(
-  'glibc'
-  'libxft'
-  'libxinerama'
-  'libxcursor'
-  'libxfixes'
-  'libxrender'
-  'libpng'
-  'libpthread-stubs'
-  'fontconfig'
-)
+depends=('fltk')
 makedepends=('cargo' 'make')
 source=("$pkgname-$pkgver.tar.gz::https://github.com/fiftydinar/$pkgname/archive/refs/tags/v$pkgver.tar.gz")
 sha512sums=('SKIP')
