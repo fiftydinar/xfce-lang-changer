@@ -59,61 +59,15 @@ fn get_available_locales() -> Vec<(String, String)> {
 }
 
 fn lang_name(code: &str) -> &str {
-    match code {
-        "en" => "English", "de" => "Deutsch", "fr" => "Français",
-        "es" => "Español", "it" => "Italiano", "pt" => "Português",
-        "ru" => "Русский", "ja" => "日本語", "zh" => "中文",
-        "ko" => "한국어", "ar" => "العربية", "nl" => "Nederlands",
-        "pl" => "Polski", "tr" => "Türkçe", "sv" => "Svenska",
-        "da" => "Dansk", "fi" => "Suomi", "nb" => "Norsk",
-        "cs" => "Čeština", "sk" => "Slovenčina", "hu" => "Magyar",
-        "ro" => "Română", "bg" => "Български", "uk" => "Українська",
-        "el" => "Ελληνικά", "he" => "עברית", "hi" => "हिन्दी",
-        "th" => "ไทย", "vi" => "Tiếng Việt", "id" => "Bahasa Indonesia",
-        "ms" => "Bahasa Melayu", "bn" => "বাংলা", "ta" => "தமிழ்",
-        "te" => "తెలుగు", "mr" => "मराठी", "gu" => "ગુજરાતી",
-        "kn" => "ಕನ್ನಡ", "ml" => "മലയാളം", "si" => "සිංහල",
-        "ne" => "नेपाली", "fa" => "فارسی", "ur" => "اردو",
-        "ca" => "Català", "eu" => "Euskara", "gl" => "Galego",
-        "hr" => "Hrvatski", "sr" => "Српски", "sl" => "Slovenščina",
-        "lt" => "Lietuvių", "lv" => "Latviešu", "et" => "Eesti",
-        "sq" => "Shqip", "mk" => "Македонски", "bs" => "Bosanski",
-        "is" => "Íslenska", "ga" => "Gaeilge", "cy" => "Cymraeg",
-        "mt" => "Malti", "af" => "Afrikaans", "sw" => "Kiswahili",
-        "am" => "ᠠᠮᠠᠷᠢ", "my" => "မြန်မာဘာသာ", "km" => "ភាសាខ្មែរ",
-        "lo" => "ລາວ", "mn" => "Монгол", "bo" => "བོད་སྐད",
-        "kk" => "Қазақ", "ky" => "Кыргыз", "tg" => "Тоҷикӣ",
-        "tk" => "Türkmen", "uz" => "Oʻzbek", "hy" => "Հայերեն",
-        "ka" => "ქართული", "ps" => "پښتو", "sd" => "سنڌي",
-        "ug" => "ئۇيغۇرچە", "tt" => "Татар",
-        _ => code,
-    }
+    isolang::Language::from_639_1(code)
+        .map(|l| l.to_name())
+        .unwrap_or(code)
 }
 
 fn country_name(code: &str) -> &str {
-    match code {
-        "US" => "United States", "GB" => "UK", "DE" => "Germany",
-        "FR" => "France", "ES" => "Spain", "IT" => "Italy",
-        "PT" => "Portugal", "BR" => "Brazil", "RU" => "Russia",
-        "JP" => "Japan", "CN" => "China", "KR" => "South Korea",
-        "SA" => "Saudi Arabia", "AE" => "UAE", "NL" => "Netherlands",
-        "PL" => "Poland", "TR" => "Turkey", "SE" => "Sweden",
-        "DK" => "Denmark", "FI" => "Finland", "NO" => "Norway",
-        "CZ" => "Czechia", "SK" => "Slovakia", "HU" => "Hungary",
-        "RO" => "Romania", "BG" => "Bulgaria", "GR" => "Greece",
-        "IL" => "Israel", "IN" => "India", "TH" => "Thailand",
-        "VN" => "Vietnam", "ID" => "Indonesia", "MY" => "Malaysia",
-        "BD" => "Bangladesh", "HK" => "Hong Kong", "TW" => "Taiwan",
-        "SG" => "Singapore", "CH" => "Switzerland", "AT" => "Austria",
-        "BE" => "Belgium", "CA" => "Canada", "AU" => "Australia",
-        "NZ" => "New Zealand", "ZA" => "South Africa", "MX" => "Mexico",
-        "AR" => "Argentina", "CL" => "Chile", "CO" => "Colombia",
-        "PE" => "Peru", "UA" => "Ukraine", "EG" => "Egypt",
-        "MA" => "Morocco", "NG" => "Nigeria", "KE" => "Kenya",
-        "PH" => "Philippines", "PK" => "Pakistan", "IR" => "Iran",
-        "IQ" => "Iraq", "DZ" => "Algeria", "TN" => "Tunisia",
-        _ => code,
-    }
+    rust_iso3166::from_alpha2(code)
+        .map(|c| c.name)
+        .unwrap_or(code)
 }
 
 fn locale_to_human_name(locale: &str) -> String {
