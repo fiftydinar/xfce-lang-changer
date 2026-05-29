@@ -65,7 +65,8 @@ Comment[sr@latin]=Promenite jezik sistema
 Comment[sv]=Ändra ditt systemspråk
 Comment[tr]=Sistem dilinizi değiştirin
 Comment[uk]=Змініть мову системи
-Comment[zh]=修改您的系统语言Exec=/usr/bin/xfce-aero-lang-changer
+Comment[zh]=修改您的系统语言
+Exec=/usr/bin/xfce-aero-lang-changer
 Icon=preferences-desktop-locale
 Terminal=false
 Type=Application
