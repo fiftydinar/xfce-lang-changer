@@ -3,7 +3,7 @@ use fltk::{
     app, button::Button, dialog,
     enums::{Align, CallbackTrigger, Color, FrameType},
     frame::Frame, input::Input, prelude::*,
-    table::{TableContext, TableRow, TableRowSelectMode}, window::Window,
+    table::{TableContext, TableRow}, window::Window,
 };
 use fltk_theme::{widget_themes, WidgetTheme, ThemeType};
 
@@ -229,7 +229,6 @@ fn main() {
 
     let mut table = TableRow::new(20, list_y, buf_w - 40, list_h, "");
     table.set_table_frame(FrameType::NoBox);
-    table.set_type(TableRowSelectMode::Single);
     table.end();
     table.set_rows(visible.borrow().len() as i32);
     table.set_cols(2);
