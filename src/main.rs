@@ -71,13 +71,24 @@ fn get_available_locales() -> Vec<(String, String)> {
     }).collect()
 }
 
-fn lang_name(code: &str) -> &str {
-    isolang::Language::from_639_1(code)
-        .and_then(|l| l.to_autonym())
-        .unwrap_or(code)
+fn lang_name(code: &str, prefer_latin: bool) -> String {
+    if let Some(lang) = isolang::Language::from_639_1(code) {
+        if let Some(autonym) = lang.to_autonym() {
+            if prefer_latin && !autonym.is_ascii() {
+                lang.to_name().to_string()
+            } else {
+                autonym.to_string()
+            }
+        } else {
+            lang.to_name().to_string()
+        }
+    } else {
+        code.to_string()
+    }
 }
 
 fn country_name(code: &str) -> &str {
+    let code = code.split('@').next().unwrap_or(code);
     rust_iso3166::from_alpha2(code)
         .map(|c| c.name)
         .unwrap_or(code)
@@ -88,8 +99,9 @@ fn locale_to_human_name(locale: &str) -> String {
     let parts: Vec<&str> = lang_part.split('_').collect();
     let lang_code = parts[0];
     let region_code = parts.get(1).copied().unwrap_or("");
+    let is_latin = locale.contains("@latin");
 
-    let lang_name = lang_name(lang_code);
+    let lang_name = lang_name(lang_code, is_latin);
     let region_name = if !region_code.is_empty() {
         let c = country_name(region_code);
         format!(" ({})", c)
