@@ -73,7 +73,7 @@ fn get_available_locales() -> Vec<(String, String)> {
 
 fn lang_name(code: &str) -> &str {
     isolang::Language::from_639_1(code)
-        .map(|l| l.to_name())
+        .and_then(|l| l.to_autonym())
         .unwrap_or(code)
 }
 
@@ -236,6 +236,9 @@ fn main() {
                 TableContext::EndPage => {
                     fltk::draw::set_draw_color(Color::from_hex(0x9AABB8));
                     fltk::draw::draw_rect(x, y, w, h);
+                }
+                TableContext::Table | TableContext::RcResize => {
+                    fltk::draw::draw_rect_fill(x, y, w, h, Color::White);
                 }
                 _ => {
                     if row < 0 || col < 0 {

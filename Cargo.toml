@@ -10,5 +10,5 @@ bundled = ["fltk/fltk-bundled"]
 [dependencies]
 fltk = { version = "1" }
 fltk-theme = "0.7"
-isolang = "2"
+isolang = { version = "2", features = ["local_names"] }
 rust_iso3166 = "0.1"
