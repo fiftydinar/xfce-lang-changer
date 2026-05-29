@@ -12,21 +12,33 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install dependencies
+      - name: Build static binary (Alpine musl)
         run: |
-          sudo apt-get update
-          sudo apt-get install -y cmake pkg-config libx11-dev libxext-dev libxft-dev libfontconfig-dev
+          docker run --rm -v $PWD:/build -w /build alpine:latest sh -c "
+            apk add --no-cache \
+              cmake g++ musl-dev pkgconfig \
+              fontconfig-dev freetype-dev \
+              libx11-dev libxext-dev libxft-dev \
+              curl
 
-      - name: Build static binary
-        run: |
-          cargo build --release
-          cargo rustc --release -p xfce-lang-changer -- -C target-feature=+crt-static
+            curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+            . /root/.cargo/env
+            rustup target add x86_64-unknown-linux-musl
+
+            cargo build --release --target x86_64-unknown-linux-musl
+            cargo rustc --release -p xfce-lang-changer --target x86_64-unknown-linux-musl \
+              -- -C link-arg=-static
+          "
 
       - name: Prepare release assets
         run: |
+          sudo chown -R $(whoami) target/
           mkdir -p release
-          cp target/release/xfce-lang-changer release/
+          cp target/x86_64-unknown-linux-musl/release/xfce-lang-changer release/
           cp xfce-lang-changer.desktop release/
+
+      - name: Verify static binary
+        run: ldd release/xfce-lang-changer 2>&1 || true
 
       - name: Create release
         uses: softprops/action-gh-release@v2
