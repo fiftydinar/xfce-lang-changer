@@ -320,8 +320,8 @@ fn env_check() -> Vec<String> {
 
     if which::which("gsettings").is_ok() {
         let de = std::env::var("XDG_CURRENT_DESKTOP").unwrap_or_default();
-        if de.eq_ignore_ascii_case("gnome") || de.contains("GNOME") || de.contains("Budgie") {
-            let de_name = if de.contains("Budgie") { "GNOME/Budgie" } else { "GNOME" };
+        if de.eq_ignore_ascii_case("gnome") || de.contains("GNOME") || de.contains("Budgie") || de.contains("Cinnamon") || de.eq_ignore_ascii_case("x-cinnamon") {
+            let de_name = if de.contains("Budgie") { "GNOME/Budgie" } else if de.contains("Cinnamon") || de.eq_ignore_ascii_case("x-cinnamon") { "Cinnamon" } else { "GNOME" };
             warnings.push(
                 format!("\"{}\" DE may override locale via gsettings.\nChanges may be ignored after login.", de_name),
             );
