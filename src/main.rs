@@ -328,7 +328,7 @@ fn main() {
         (screen.0 as i32 - buf_w) / 2,
         (screen.1 as i32 - buf_h) / 2,
         buf_w, buf_h,
-        "Language Changer",
+        "Languages",
     );
     win.make_resizable(true);
 
@@ -348,7 +348,7 @@ fn main() {
         let bold = fltk::enums::Font::by_name("Noto Sans Bold");
         fltk::draw::set_font(bold, 16);
         fltk::draw::set_draw_color(Color::White);
-        fltk::draw::draw_text2("Language Changer", 0, 6, w, 24, Align::Center | Align::Inside);
+        fltk::draw::draw_text2("Languages", 0, 6, w, 24, Align::Center | Align::Inside);
         let reg = fltk::enums::Font::by_name("Noto Sans");
         fltk::draw::set_font(reg, 11);
         fltk::draw::set_draw_color(Color::from_hex(0xA0D0CC));
