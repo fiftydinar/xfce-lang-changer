@@ -195,28 +195,12 @@ fn main() {
     let body_y = 68;
     let body_h = buf_h - body_y - 8;
 
-    let curr = current.clone();
-    let mut curr_label = Frame::new(20, body_y, buf_w - 40, 26, "");
-    curr_label.set_frame(FrameType::NoBox);
-    curr_label.draw(move |f| {
-        let w = f.w();
-        let h = f.h();
-        for y in 0..h {
-            let t = y as f64 / h as f64;
-            let r = (0xEEu8 as f64 * (1.0 - t) + 0xFFu8 as f64 * t) as u8;
-            let g = (0xF4u8 as f64 * (1.0 - t) + 0xFFu8 as f64 * t) as u8;
-            let b = (0xF2u8 as f64 * (1.0 - t) + 0xFFu8 as f64 * t) as u8;
-            fltk::draw::draw_rect_fill(0, y, w, 1, Color::from_rgb(r, g, b));
-        }
-        let bold = fltk::enums::Font::by_name("Noto Sans Bold");
-        fltk::draw::set_font(bold, 13);
-        fltk::draw::set_draw_color(Color::from_hex(0x09554E));
-        fltk::draw::draw_text2(
-            &format!("Current: {} - {}", locale_to_human_name(&curr), curr),
-            0, 0, w, h,
-            Align::Center | Align::Inside,
-        );
-    });
+    let mut curr_label = Frame::new(20, body_y, buf_w - 40, 24, "");
+    curr_label.set_frame(FrameType::BorderBox);
+    curr_label.set_label_size(13);
+    curr_label.set_label_color(Color::from_hex(0x09554E));
+    curr_label.set_align(Align::Center | Align::Inside);
+    curr_label.set_label(&format!("Current: {} - {}", locale_to_human_name(&current), current));
 
     // Search/filter label
     let mut search_label = Frame::new(20, body_y + 25, buf_w - 40, 16, "Search languages...");
