@@ -1,47 +1,44 @@
 # xfce-aero-lang-changer
 
-A GUI language switcher for XFCE with Aero-style theming, built with [fltk-rs](https://github.com/fltk-rs/fltk-rs).
+A language picker alternative for Arch + XFCE X11 desktops, built with FLTK in Aero style.
 
-Part of the [xfce-aerolike](https://github.com/fiftydinar/xfce-aerolike) project.
+Presents all generated system languages in a table with native names. Filter as you type with built-in Latin ↔ Cyrillic transliteration. Selecting a language writes it to `locale.conf` and offers to log out so the change takes effect on next login.
 
-Lists all available system locales with native language names and region codes in a two-column table. Real-time search filters both columns with Latin ↔ Cyrillic transliteration (for Serbian/Croatian/Bosnian/Montenegrin). Applies the selected locale to `$XDG_CONFIG_HOME/locale.conf` and prompts to log out (locale takes effect on next session).
-
-## Compatibility
-
-Locale switching writes to `~/.config/locale.conf` (XDG_CONFIG_HOME). This file is sourced by `/etc/profile.d/locale.sh` on **Arch Linux** and derivatives (Manjaro, EndeavourOS), taking effect on next login.
-
-| Distro | Support | Notes |
-|---|---|---|
-| Arch Linux | ✅ Full | via profile.d/locale.sh |
-| Fedora / RHEL | ❌ No | GNOME uses GSettings; locale.conf ignored |
-| Debian / Ubuntu | ❌ No | uses /etc/default/locale |
-| openSUSE | ❌ No | uses /etc/sysconfig/language |
-
-| Desktop Env | Behavior | Notes |
-|---|---|---|
-| XFCE | ✅ Works | reads LANG from session environment |
-| GNOME | ❌ Bypassed | uses own GSettings, ignores locale.conf |
-| KDE Plasma | ❌ Bypassed | uses ~/.config/plasma-localerc |
-
-This app is primarily aimed at **Arch Linux with XFCE**.
-
-## Build & Install
+Made primarely for the purposes of my XFCE custom image distribution:  
+https://github.com/fiftydinar/xfce-aero-lang-changer
 
 ```sh
-make
-sudo make install
+make && sudo make install
 ```
 
-Static build: `make LINK=static`
+## How it works
+
+The tool writes `LANG=<language>` to `$XDG_CONFIG_HOME/locale.conf`. On Arch Linux and derivatives, this file is sourced by `/etc/profile.d/locale.sh` at login. It also injects the same `LANG` export into `~/.xprofile` for sessions that read that file.
+
+The selected language is applied on the **next login**, not immediately. After picking a language, the dialog lets you either log out now or do it later.
+
+## Compatibility guard
+
+Before opening the picker, the app checks for known incompatibilities — Wayland sessions, non-Arch distros, GNOME/KDE/Deepin desktop environments, and similar scenarios where `locale.conf` may be ignored or overridden. If any are detected, the app displays the details and exits.
+
+This guard exists because the tool writes to a file that only certain session stacks respect. Running it blindly on an incompatible setup gives the illusion of a working language change while actually doing nothing.
 
 ## Requirements
 
-- XFCE
-- System locales generated (`locale -a`)
-- [fltk](https://archlinux.org/packages/extra/x86_64/fltk/) (for dynamic linking)
-- [Noto Sans](https://archlinux.org/packages/extra/any/noto-sans/) (for RTL script support)
+- Linux with XFCE (or another desktop that reads `locale.conf`/`.xprofile`)
+- System languages generated (check with `locale -a`)
+- FLTK library for dynamic builds (`fltk-git` on Arch AUR repository)
+- Noto Sans font for RTL script rendering
+- Rust toolchain to build from source
 
-## Uninstall
+## Building
+
+| Mode | Command |
+|------|---------|
+| Dynamic (system FLTK) | `make` |
+| Static (bundled FLTK) | `make LINK=static` |
+
+## Uninstalling
 
 ```sh
 sudo make uninstall
