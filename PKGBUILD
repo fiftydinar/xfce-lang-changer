@@ -14,7 +14,7 @@ sha512sums=('SKIP')
 
 build() {
   cd "$srcdir/$pkgname-$pkgver"
-  make
+  make  
 }
 
 package() {
