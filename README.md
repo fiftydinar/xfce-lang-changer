@@ -10,22 +10,23 @@ Used for [xfce-aerolike](https://github.com/fiftydinar/xfce-aerolike/tree/main/r
 ## Features
 
 - Browse and search all installed locales (`locale -a`)
-- Human-friendly display: *"English (United States)  —  en_US.UTF-8"*
-- Real-time filter as you type
-- Aero-style gradient header theme
-- Writes locale to files under `$XDG_CONFIG_HOME` (or `~/.config`):
-  - `locale.conf`
-  - `environment.d/99-lang.conf`
-  - `xfce4/environment`
-- Sets `LANG` via `systemctl --user set-environment`
+- Two-column table: language name (in its own script) and locale code right-aligned
+- Shows native language names (autonyms) — e.g. "Deutsch" instead of "German", "français" instead of "French"
+- Locale variant awareness: prefers Latin names when `@latin` is in the locale code
+- Real-time filter as you type (searches both name and code fields)
+- Aero-style gradient header with bold title and light subtitle
+- Custom-drawn table with alternating row colors, subtle grid lines, and soft border
+- Thin rounded "Current:" label with Aero teal accent
+- Writes `LANG` to `$XDG_CONFIG_HOME/locale.conf` (or `~/.config/locale.conf`) — read by `pam_systemd` at login
 - Prompts to log out after applying — locale is set at process startup and cannot be changed at runtime
 - Dynamic linking against system `fltk` (static build also available)
 
 ## Requirements
 
 - XFCE desktop environment
-- [fltk](https://archlinux.org/packages/extra/x86_64/fltk/) system package (for dynamic linking)
 - System locales generated (see `locale -a` / `locale.gen`)
+- [fltk](https://archlinux.org/packages/extra/x86_64/fltk/) system package for dynamic linking
+- Noto Sans font family for proper RTL and wide script support
 
 ## Build & Install
 
