@@ -324,7 +324,7 @@ fn main() {
     apply_btn.set_label_color(Color::Black);
     apply_btn.set_frame(widget_themes::OS_BUTTON_UP_BOX);
 
-    let mut quit_btn = Button::new(20, btn_area_y, 55, 23, "Quit");
+    let mut quit_btn = Button::new(20, btn_area_y, 80, 23, "Quit");
     quit_btn.set_label_size(11);
     quit_btn.set_label_color(Color::Black);
     quit_btn.set_frame(widget_themes::OS_BUTTON_UP_BOX);
