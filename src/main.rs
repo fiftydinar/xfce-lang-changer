@@ -184,7 +184,7 @@ fn main() {
     let body_h = buf_h - body_y - 8;
 
     let mut curr_label = Frame::new(20, body_y, buf_w - 40, 24, "");
-    curr_label.set_frame(FrameType::BorderBox);
+    curr_label.set_frame(FrameType::RoundedBox);
     curr_label.set_label_size(13);
     curr_label.set_label_color(Color::from_hex(0x09554E));
     curr_label.set_align(Align::Center | Align::Inside);
