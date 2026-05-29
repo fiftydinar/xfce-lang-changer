@@ -4,7 +4,7 @@ DATADIR ?= $(PREFIX)/share
 APPDIR ?= $(DATADIR)/applications
 
 TARGET ?= release
-BINARY := target/$(TARGET)/xfce-lang-changer
+BINARY := target/$(TARGET)/xfce-aero-lang-changer
 
 # Linking mode: static (bundled fltk) or dynamic (system fltk)
 LINK ?= dynamic
@@ -21,12 +21,12 @@ build:
 $(BINARY): build
 
 install: $(BINARY)
-	install -Dm755 $(BINARY) $(DESTDIR)$(BINDIR)/xfce-lang-changer
-	install -Dm644 xfce-lang-changer.desktop $(DESTDIR)$(APPDIR)/xfce-lang-changer.desktop
+	install -Dm755 $(BINARY) $(DESTDIR)$(BINDIR)/xfce-aero-lang-changer
+	install -Dm644 xfce-aero-lang-changer.desktop $(DESTDIR)$(APPDIR)/xfce-aero-lang-changer.desktop
 
 uninstall:
-	rm -f $(DESTDIR)$(BINDIR)/xfce-lang-changer
-	rm -f $(DESTDIR)$(APPDIR)/xfce-lang-changer.desktop
+	rm -f $(DESTDIR)$(BINDIR)/xfce-aero-lang-changer
+	rm -f $(DESTDIR)$(APPDIR)/xfce-aero-lang-changer.desktop
 
 clean:
 	cargo clean

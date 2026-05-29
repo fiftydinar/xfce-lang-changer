@@ -2,7 +2,7 @@
 Version=1.0
 Name=Language Changer
 Comment=Change the system language
-Exec=/usr/bin/xfce-lang-changer
+Exec=/usr/bin/xfce-aero-lang-changer
 Icon=preferences-desktop-locale
 Terminal=false
 Type=Application

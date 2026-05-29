@@ -1,6 +1,6 @@
 # Maintainer: fiftydinar <fiftydinar@tuta.io>
 
-pkgname=xfce-lang-changer
+pkgname=xfce-aero-lang-changer
 pkgver=1.0.0
 pkgrel=1
 pkgdesc="GUI language switcher for XFCE with Aero-style theming"
@@ -9,7 +9,7 @@ url="https://github.com/fiftydinar/xfce-lang-changer"
 license=('Apache-2.0')
 depends=('fltk')
 makedepends=('cargo' 'make')
-source=("$pkgname-$pkgver.tar.gz::https://github.com/fiftydinar/$pkgname/archive/refs/tags/v$pkgver.tar.gz")
+source=("xfce-aero-lang-changer-$pkgver.tar.gz::https://github.com/fiftydinar/xfce-lang-changer/archive/refs/tags/v$pkgver.tar.gz")
 sha512sums=('SKIP')
 
 build() {
