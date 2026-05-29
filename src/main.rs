@@ -249,47 +249,43 @@ fn show_aero_msg(locale: &str) -> Option<i32> {
     ret
 }
 
-fn detect_distro() -> String {
-    let content = std::fs::read_to_string("/etc/os-release")
-        .unwrap_or_default();
-    for line in content.lines() {
-        if let Some(val) = line.strip_prefix("ID=") {
-            return val.trim_matches('"').to_lowercase();
-        }
-        if let Some(val) = line.strip_prefix("ID_LIKE=") {
-            return val.trim_matches('"').to_lowercase();
-        }
-    }
-    String::new()
-}
-
-fn detect_desktop() -> String {
-    std::env::var("XDG_CURRENT_DESKTOP")
-        .or_else(|_| std::env::var("DESKTOP_SESSION"))
-        .unwrap_or_default()
-        .to_lowercase()
-}
-
 fn env_check(config_path: &str) -> Vec<String> {
     let mut warnings = Vec::new();
-    let distro = detect_distro();
-    let de = detect_desktop();
 
-    let arch_like = ["arch", "archarm", "manjaro", "endeavouros", "artix", "cachyos"];
-    if !distro.is_empty() && !arch_like.iter().any(|&d| distro.contains(d)) {
-        warnings.push(format!(
-            "Distro \"{}\" may not source\n{}\nat login.\n\
-             The locale file will be written but may be ignored.",
-            distro, config_path
-        ));
+    let has_locale_sh = std::path::Path::new("/etc/profile.d/locale.sh").exists();
+    let has_etc_locale = std::path::Path::new("/etc/locale.conf").exists();
+
+    if !has_locale_sh {
+        let mut msg = format!(
+            "No /etc/profile.d/locale.sh found —\n\
+             {} will be written but may not be\n\
+             sourced at login (this is Arch-specific).",
+            config_path
+        );
+        if has_etc_locale {
+            msg.push_str(
+                "\n\n/etc/locale.conf exists (system-wide),\n\
+                 but this app writes to the user-level file.",
+            );
+        }
+        warnings.push(msg);
     }
 
-    let overrides = ["gnome", "kde", "cinnamon", "budgie", "deepin", "pantheon"];
-    if overrides.iter().any(|&d| de.contains(d)) {
+    if which::which("gsettings").is_ok() {
+        let de = std::env::var("XDG_CURRENT_DESKTOP").unwrap_or_default();
         warnings.push(format!(
-            "\"{}\" DE manages locale through its own settings.\n\
-             {} may be overridden.",
+            "\"{}\" DE may override locale via gsettings.\n\
+             {} may be ignored after login.",
             de, config_path
+        ));
+    }
+    if std::path::Path::new(&config_dir().join("plasma-localerc").display().to_string())
+        .exists()
+    {
+        warnings.push(format!(
+            "KDE plasma-localerc found — may override\n\
+             {} after login.",
+            config_path
         ));
     }
 
@@ -352,7 +348,7 @@ fn main() {
         let bold = fltk::enums::Font::by_name("Noto Sans Bold");
         fltk::draw::set_font(bold, 16);
         fltk::draw::set_draw_color(Color::White);
-        fltk::draw::draw_text2("Language Changer", 0, 10, w, 26, Align::Center | Align::Inside);
+        fltk::draw::draw_text2("Language Changer", 0, 6, w, 24, Align::Center | Align::Inside);
         let reg = fltk::enums::Font::by_name("Noto Sans");
         fltk::draw::set_font(reg, 11);
         fltk::draw::set_draw_color(Color::from_hex(0xA0D0CC));

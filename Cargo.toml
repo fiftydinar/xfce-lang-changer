@@ -15,3 +15,4 @@ fltk-theme = "0.7"
 i18n-country-translations = "0.2"
 isolang = { version = "2", features = ["local_names"] }
 rust_iso3166 = "0.1"
+which = "8"
