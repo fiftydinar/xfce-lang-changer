@@ -8,7 +8,7 @@ arch=('x86_64')
 url="https://github.com/fiftydinar/xfce-aero-lang-changer"
 license=('Apache-2.0')
 depends=('fltk')
-makedepends=('cargo' 'make')
+makedepends=('cargo' 'make' 'cmake')
 source=("xfce-aero-lang-changer-$pkgver.tar.gz::https://github.com/fiftydinar/xfce-aero-lang-changer/archive/refs/tags/v$pkgver.tar.gz")
 sha512sums=('SKIP')
 
