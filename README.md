@@ -35,7 +35,6 @@ This guard exists because the tool writes to a file that only certain session st
 - Linux with XFCE (or another desktop that reads `locale.conf`/`.xprofile`)
 - System languages generated (check with `locale -a`)
 - FLTK library for dynamic builds (`fltk-git` on Arch AUR repository)
-- Noto Sans font for RTL script rendering
 - Rust toolchain to build from source
 
 ## Building

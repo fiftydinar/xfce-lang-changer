@@ -300,7 +300,7 @@ fn show_aero_alert(t: &Trans, title: &str, msg: &str) {
             let b = (92u8 as f64 * (1.0 - t) + 136u8 as f64 * t) as u8;
             fltk::draw::draw_rect_fill(0, y, w, 1, Color::from_rgb(0, g, b));
         }
-        let bold = fltk::enums::Font::by_name("Noto Sans Bold");
+        let bold = fltk::enums::Font::by_name("sans-serif Bold");
         fltk::draw::set_font(bold, 13);
         fltk::draw::set_draw_color(Color::White);
         fltk::draw::draw_text2(&header_title, 0, 0, w, h, Align::Center | Align::Inside);
@@ -311,7 +311,7 @@ fn show_aero_alert(t: &Trans, title: &str, msg: &str) {
     let mut text = TextDisplay::new(30, 46, dlg_w - 60, dlg_h - 120, "");
     text.set_buffer(buf);
     text.wrap_mode(WrapMode::AtBounds, 0);
-    text.set_text_font(fltk::enums::Font::by_name("Noto Sans"));
+    text.set_text_font(fltk::enums::Font::by_name("sans-serif"));
     text.set_text_size(12);
     text.set_text_color(Color::Black);
     text.set_frame(FrameType::NoBox);
@@ -352,7 +352,7 @@ fn show_aero_msg(t: &Trans, human_name: &str, locale: &str) -> Option<i32> {
             let b = (92u8 as f64 * (1.0 - t) + 136u8 as f64 * t) as u8;
             fltk::draw::draw_rect_fill(0, y, w, 1, Color::from_rgb(0, g, b));
         }
-        let bold = fltk::enums::Font::by_name("Noto Sans Bold");
+        let bold = fltk::enums::Font::by_name("sans-serif Bold");
         fltk::draw::set_font(bold, 13);
         fltk::draw::set_draw_color(Color::White);
         fltk::draw::draw_text2(&header_label, 0, 0, w, h, Align::Center | Align::Inside);
@@ -513,11 +513,11 @@ fn main() {
             let b = (92u8 as f64 * (1.0 - t) + 136u8 as f64 * t) as u8;
             fltk::draw::draw_rect_fill(0, y, w, 1, Color::from_rgb(r, g, b));
         }
-        let bold = fltk::enums::Font::by_name("Noto Sans Bold");
+        let bold = fltk::enums::Font::by_name("sans-serif Bold");
         fltk::draw::set_font(bold, 16);
         fltk::draw::set_draw_color(Color::White);
         fltk::draw::draw_text2(&header_title, 0, 6, w, 24, Align::Center | Align::Inside);
-        let reg = fltk::enums::Font::by_name("Noto Sans");
+        let reg = fltk::enums::Font::by_name("sans-serif");
         fltk::draw::set_font(reg, 11);
         fltk::draw::set_draw_color(Color::from_hex(0xA0D0CC));
         fltk::draw::draw_text2(&header_subtitle, 0, 32, w, 20, Align::Center | Align::Inside);
@@ -623,7 +623,7 @@ fn main() {
                     };
                     fltk::draw::draw_rect_fill(x, y, w, h, bg);
 
-                    let font = fltk::enums::Font::by_name("Noto Sans");
+                    let font = fltk::enums::Font::by_name("sans-serif");
                     fltk::draw::set_font(font, 13);
 
                     let fg = if is_sel { Color::White } else { Color::Black };
