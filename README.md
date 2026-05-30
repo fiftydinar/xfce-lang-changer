@@ -7,7 +7,7 @@
   </tr>
 </table>
 
-A language picker alternative for Arch + XFCE X11 desktops, built with FLTK in Aero style.
+A language picker for Arch + XFCE X11 desktops, built with FLTK in Aero style.
 
 Presents all generated system languages in a table with native names. Filter as you type with built-in Latin ↔ Cyrillic transliteration. Selecting a language writes it to `locale.conf` and offers to log out so the change takes effect on next login.
 
