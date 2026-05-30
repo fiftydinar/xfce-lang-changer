@@ -22,5 +22,5 @@ build() {
 
 package() {
   cd "$srcdir/$pkgname-$pkgver"
-  make install PREFIX=/usr DESTDIR="$pkgdir"
+  make install LINK="${LINK:-dynamic}" PREFIX=/usr DESTDIR="$pkgdir"
 }
