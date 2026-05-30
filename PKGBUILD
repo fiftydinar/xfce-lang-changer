@@ -11,7 +11,7 @@ license=('Apache-2.0')
 # LINK=static  → bundle FLTK (no system dep, bigger binary)
 # LINK=dynamic → use system FLTK (default)
 depends=('fltk')
-makedepends=('cargo' 'make')
+makedepends=('cargo' 'make' 'cmake')
 source=("xfce-aero-lang-changer-$pkgver.tar.gz::https://github.com/fiftydinar/xfce-aero-lang-changer/archive/refs/tags/v$pkgver.tar.gz")
 sha512sums=('31198186b4820c123ba103e00e9f265d5c2fd7b889dc7dfc6596721704c2f27a4deb229f2777a0e07a6bca7b10eb69595749e9dbac09a347ce756482893dd6f1')
 
