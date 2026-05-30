@@ -32,10 +32,14 @@ This guard exists because the tool writes to a file that only certain session st
 
 ## Requirements
 
+**Run-time:**
 - Linux with XFCE (or another desktop that reads `locale.conf`/`.xprofile`)
 - System languages generated (check with `locale -a`)
-- FLTK library for dynamic builds (`fltk-git` on Arch AUR repository)
-- Rust toolchain to build from source
+- `noto-fonts` and `noto-fonts-extra` recommended for full Unicode coverage across scripts
+
+**Build-time:**
+- Rust toolchain (`cargo`)
+- FLTK library for dynamic builds (`fltk-git` on Arch AUR)
 
 ## Building
 
