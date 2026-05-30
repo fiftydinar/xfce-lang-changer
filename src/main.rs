@@ -825,8 +825,7 @@ fn main() {
                     fltk::draw::set_draw_color(fg);
 
                     let text = if col == 0 { human } else { loc };
-                    let align = if col == 0 { Align::Left } else { Align::Right };
-                    fltk::draw::draw_text2(text, x + 4, y, w - 4, h, align | Align::Inside);
+                    fltk::draw::draw_text2(text, x + 4, y, w - 4, h, Align::Left | Align::Inside);
 
                     fltk::draw::set_draw_color(Color::from_hex(0xD8DDE3));
                     fltk::draw::draw_rect_fill(x, y + h - 1, w, 1, Color::from_hex(0xD8DDE3));
