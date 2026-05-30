@@ -17,7 +17,7 @@ sha512sums=('31198186b4820c123ba103e00e9f265d5c2fd7b889dc7dfc6596721704c2f27a4de
 
 build() {
   cd "$srcdir/$pkgname-$pkgver"
-  make LINK="${LINK-dynamic}"
+  make LINK="${LINK:-dynamic}"
 }
 
 package() {
