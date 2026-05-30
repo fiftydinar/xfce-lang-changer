@@ -1,0 +1,62 @@
+name: Monthly country data update
+
+on:
+  schedule:
+    # 1st of every month at 10:00 UTC
+    - cron: "0 10 1 * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install all locales
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq locales-all 2>/dev/null || \
+            sudo apt-get install -y -qq language-pack-*
+
+      - name: Install Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Show installed locales count
+        run: locale -a | wc -l
+
+      - name: Generate country data
+        run: python3 scripts/generate-country-data.py
+
+      - name: Check for changes
+        id: diff
+        run: |
+          if ! git diff --quiet data/country_names.json; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            echo "diff_size=$(git diff data/country_names.json | wc -l)" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Create Pull Request
+        if: steps.diff.outputs.changed == 'true'
+        uses: peter-evans/create-pull-request@v7
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: "chore: update country_names.json from latest CLDR + system data"
+          title: "Update country data (${{ steps.diff.outputs.diff_size }} lines changed)"
+          body: |
+            Automated update of `data/country_names.json` from:
+            - Latest CLDR release (territory translations)
+            - System locale LC_ADDRESS extraction
+            - Manual overrides for empty languages
+
+            **Changes:** ${{ steps.diff.outputs.diff_size }} lines modified.
+          branch: automated/update-country-data
+          base: main
+          labels: automated, country-data
