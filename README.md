@@ -1,9 +1,16 @@
 # xfce-aero-lang-changer
 
-<table>
+<table style="border-collapse: collapse; border: none; background: transparent;">
   <tr>
-    <td><img width="100%" alt="Snimak ekrana od 2026-05-29 22-39-56" src="https://github.com/user-attachments/assets/b236b344-4a2d-4dcb-b936-276cc77fec5a" /></td>
-    <td><img width="100%" alt="Snimak ekrana od 2026-05-29 22-41-54" src="https://github.com/user-attachments/assets/4fc43bdc-7de2-49cd-852f-7fe310b49ce5" /></td>
+    <td style="border: none; padding: 0; background: transparent;">
+      <img src="showcase/showcase1.png" alt="showcase1" style="width: 100%; height: 250px; object-fit: cover; background: transparent; display: block;" />
+    </td>
+    <td style="border: none; padding: 0; background: transparent;">
+      <img src="showcase/showcase2.png" alt="showcase2" style="width: 100%; height: 250px; object-fit: cover; background: transparent; display: block;" />
+    </td>
+    <td style="border: none; padding: 0; background: transparent;">
+      <img src="showcase/showcase3.png" alt="showcase3" style="width: 100%; height: 250px; object-fit: cover; background: transparent; display: block;" />
+    </td>    
   </tr>
 </table>
 
