@@ -1,6 +1,6 @@
 [package]
 name = "xfce-aero-lang-changer"
-version = "1.0.2"
+version = "1.0.3"
 edition = "2021"
 
 [features]
@@ -8,11 +8,9 @@ default = ["bundled"]
 bundled = ["fltk/fltk-bundled"]
 
 [dependencies]
-cyrla = "0.1"
 dirs = "6"
 fltk = { version = "1" }
 fltk-theme = "0.7"
-i18n-country-translations = "0.2"
 isolang = { version = "2", features = ["local_names"] }
 rust_iso3166 = "0.1"
 serde = { version = "1", features = ["derive"] }

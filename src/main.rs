@@ -8,6 +8,8 @@ use fltk::{
 };
 use fltk_theme::{widget_themes, WidgetTheme, ThemeType};
 
+mod country_data;
+
 const AERO_BORDER: Color = Color::from_hex(0x09554E);
 
 #[derive(Clone)]
@@ -35,7 +37,7 @@ struct Trans {
     warning_non_arch: String,
 }
 
-const LANG_JSON: &str = include_str!("lang.json");
+const LANG_JSON: &str = include_str!("../data/lang.json");
 
 fn trans_from_map(m: &HashMap<String, String>) -> Trans {
     fn g(m: &HashMap<String, String>, key: &str) -> String {
@@ -194,15 +196,22 @@ fn get_available_locales() -> Vec<(String, String)> {
 }
 
 fn lang_name(code: &str, modifier: Option<&str>) -> String {
+    // Uzbek @cyrillic override — isolang gives "o'zbek" (Latin), correct is "ўзбек" (Cyrillic)
+    if code == "uz" && matches!(modifier, Some("cyrillic") | Some("Cyrl")) {
+        return "ўзбек".to_string();
+    }
+
     if let Some(lang) = isolang::Language::from_639_1(code) {
         let autonym = lang.to_autonym()
             .map(|s| s.to_string())
             .unwrap_or_else(|| lang.to_name().to_string());
         match modifier {
-            Some("latin") | Some("Latn") if is_cyrillic(autonym.chars().next().unwrap_or(' ')) => {
+            Some("latin") | Some("Latn") | Some("iqtelif")
+                if is_cyrillic(autonym.chars().next().unwrap_or(' ')) => {
                 transliterate(&autonym)
             }
-            Some("cyrillic") | Some("Cyrl") if !is_cyrillic(autonym.chars().next().unwrap_or(' ')) => {
+            Some("cyrillic") | Some("Cyrl")
+                if !is_cyrillic(autonym.chars().next().unwrap_or(' ')) => {
                 transliterate(&autonym)
             }
             _ => autonym,
@@ -212,12 +221,23 @@ fn lang_name(code: &str, modifier: Option<&str>) -> String {
     }
 }
 
-fn country_name(code: &str, lang: &str) -> String {
-    let code = code.split('@').next().unwrap_or(code);
-    use i18n_country_translations::*;
-    let _ = register_locale(lang);
-    get_name_for_locale(lang, code)
-        .unwrap_or_else(|| rust_iso3166::from_alpha2(code).map(|c| c.name).unwrap_or(code).to_string())
+fn country_name(code: &str, lang: &str, modifier: Option<&str>) -> String {
+    // Try with modifier first (e.g. "be@latin")
+    if let Some(m) = modifier {
+        let key = format!("{}@{}", lang, m);
+        if let Some(name) = country_data::db().lookup(&key, code) {
+            return name.to_string();
+        }
+    }
+    // Fall back to base language
+    country_data::db().lookup(lang, code)
+        .map(|s| s.to_string())
+        .unwrap_or_else(|| {
+            rust_iso3166::from_alpha2(code)
+                .map(|c| c.name)
+                .unwrap_or(code)
+                .to_string()
+        })
 }
 
 fn locale_to_human_name(locale: &str) -> String {
@@ -230,17 +250,22 @@ fn locale_to_human_name(locale: &str) -> String {
 
     let lang_name = lang_name(lang_code, modifier);
     let region_name = if !region_code.is_empty() {
-        let mut c = country_name(region_code, lang_code);
+        let mut c = country_name(region_code, lang_code, modifier);
+
+        // Apply script-appropriate transliteration if data doesn't have native script
         let first_char = c.chars().next().unwrap_or(' ');
         match modifier {
-            Some("latin") | Some("Latn") if is_cyrillic(first_char) => {
+            Some("latin") | Some("Latn") | Some("iqtelif")
+                if is_cyrillic(first_char) => {
                 c = transliterate(&c);
             }
-            Some("cyrillic") | Some("Cyrl") if !is_cyrillic(first_char) => {
+            Some("cyrillic") | Some("Cyrl")
+                if !is_cyrillic(first_char) => {
                 c = transliterate(&c);
             }
             _ => {}
         }
+
         format!(" ({})", c)
     } else {
         String::new()
@@ -252,15 +277,155 @@ fn is_cyrillic(c: char) -> bool {
     matches!(c, '\u{0400}'..='\u{04FF}' | '\u{0500}'..='\u{052F}')
 }
 
+fn lat_to_cyr(s: &str) -> String {
+    let chars: Vec<char> = s.chars().collect();
+    let mut out = String::with_capacity(s.len());
+    let mut i = 0;
+    while i < chars.len() {
+        // Multi-character sequences (longest first)
+        if i + 4 <= chars.len() {
+            let w: String = chars[i..i+4].iter().collect();
+            match w.as_str() {
+                "shch" => { out.push('щ'); i += 4; continue; }
+                "Shch" => { out.push('Щ'); i += 4; continue; }
+                _ => {}
+            }
+        }
+        if i + 2 <= chars.len() {
+            let pair: String = chars[i..i+2].iter().collect();
+            match pair.as_str() {
+                "nj" => { out.push('њ'); i += 2; continue; }
+                "Nj" => { out.push('Њ'); i += 2; continue; }
+                "lj" => { out.push('љ'); i += 2; continue; }
+                "Lj" => { out.push('Љ'); i += 2; continue; }
+                "dž" => { out.push('џ'); i += 2; continue; }
+                "Dž" => { out.push('Џ'); i += 2; continue; }
+                "dj" => { out.push('ђ'); i += 2; continue; }
+                "Dj" => { out.push('Ђ'); i += 2; continue; }
+                "sh" => { out.push('ш'); i += 2; continue; }
+                "Sh" => { out.push('Ш'); i += 2; continue; }
+                "ch" => { out.push('ч'); i += 2; continue; }
+                "Ch" => { out.push('Ч'); i += 2; continue; }
+                "yo" => { out.push('ё'); i += 2; continue; }
+                "Yo" => { out.push('Ё'); i += 2; continue; }
+                "ye" => { out.push('є'); i += 2; continue; }
+                "Ye" => { out.push('Є'); i += 2; continue; }
+                "yi" => { out.push('ї'); i += 2; continue; }
+                "Yi" => { out.push('Ї'); i += 2; continue; }
+                "yu" => { out.push('ю'); i += 2; continue; }
+                "Yu" => { out.push('Ю'); i += 2; continue; }
+                "ya" => { out.push('я'); i += 2; continue; }
+                "Ya" => { out.push('Я'); i += 2; continue; }
+                "oʻ" | "o'" => { out.push('ў'); i += 2; continue; }
+                "Oʻ" | "O'" => { out.push('Ў'); i += 2; continue; }
+                "gʻ" | "g'" => { out.push('ғ'); i += 2; continue; }
+                "Gʻ" | "G'" => { out.push('Ғ'); i += 2; continue; }
+                _ => {}
+            }
+        }
+        match chars[i] {
+            'a' => out.push('а'), 'b' => out.push('б'),
+            'v' => out.push('в'), 'g' => out.push('г'),
+            'd' => out.push('д'), 'đ' => out.push('ђ'),
+            'e' => out.push('е'), 'ž' => out.push('ж'),
+            'z' => out.push('з'), 'i' => out.push('и'),
+            'j' => out.push('ј'), 'k' => out.push('к'),
+            'l' => out.push('л'), 'm' => out.push('м'),
+            'n' => out.push('н'), 'o' => out.push('о'),
+            'p' => out.push('п'), 'r' => out.push('р'),
+            's' => out.push('с'), 't' => out.push('т'),
+            'ć' => out.push('ћ'), 'u' => out.push('у'),
+            'f' => out.push('ф'), 'h' => out.push('х'),
+            'c' => out.push('ц'), 'č' => out.push('ч'),
+            'š' => out.push('ш'), 'y' => out.push('ы'),
+            'q' => out.push('қ'), 'x' => out.push('х'),
+            'A' => out.push('А'), 'B' => out.push('Б'),
+            'V' => out.push('В'), 'G' => out.push('Г'),
+            'D' => out.push('Д'), 'Đ' => out.push('Ђ'),
+            'E' => out.push('Е'), 'Ž' => out.push('Ж'),
+            'Z' => out.push('З'), 'I' => out.push('И'),
+            'J' => out.push('Ј'), 'K' => out.push('К'),
+            'L' => out.push('Л'), 'M' => out.push('М'),
+            'N' => out.push('Н'), 'O' => out.push('О'),
+            'P' => out.push('П'), 'R' => out.push('Р'),
+            'S' => out.push('С'), 'T' => out.push('Т'),
+            'Ć' => out.push('Ћ'), 'U' => out.push('У'),
+            'F' => out.push('Ф'), 'H' => out.push('Х'),
+            'C' => out.push('Ц'), 'Č' => out.push('Ч'),
+            'Š' => out.push('Ш'), 'Y' => out.push('Ы'),
+            'Q' => out.push('Қ'), 'X' => out.push('Х'),
+            _ => out.push(chars[i]),
+        }
+        i += 1;
+    }
+    out
+}
+
+fn cyr_to_lat(s: &str) -> String {
+    let mut out = String::with_capacity(s.len());
+    for c in s.chars() {
+        match c {
+            'А' => out.push_str("A"), 'Б' => out.push_str("B"),
+            'В' => out.push_str("V"), 'Г' => out.push_str("G"),
+            'Д' => out.push_str("D"), 'Ђ' => out.push_str("Đ"),
+            'Е' => out.push_str("E"), 'Ж' => out.push_str("Ž"),
+            'З' => out.push_str("Z"), 'И' => out.push_str("I"),
+            'Ј' => out.push_str("J"), 'К' => out.push_str("K"),
+            'Л' => out.push_str("L"), 'Љ' => out.push_str("Lj"),
+            'М' => out.push_str("M"), 'Н' => out.push_str("N"),
+            'Њ' => out.push_str("Nj"), 'О' => out.push_str("O"),
+            'П' => out.push_str("P"), 'Р' => out.push_str("R"),
+            'С' => out.push_str("S"), 'Т' => out.push_str("T"),
+            'Ћ' => out.push_str("Ć"), 'У' => out.push_str("U"),
+            'Ф' => out.push_str("F"), 'Х' => out.push_str("H"),
+            'Ц' => out.push_str("C"), 'Ч' => out.push_str("Č"),
+            'Џ' => out.push_str("Dž"), 'Ш' => out.push_str("Š"),
+            'а' => out.push_str("a"), 'б' => out.push_str("b"),
+            'в' => out.push_str("v"), 'г' => out.push_str("g"),
+            'д' => out.push_str("d"), 'ђ' => out.push_str("đ"),
+            'е' => out.push_str("e"), 'ж' => out.push_str("ž"),
+            'з' => out.push_str("z"), 'и' => out.push_str("i"),
+            'ј' => out.push_str("j"), 'к' => out.push_str("k"),
+            'л' => out.push_str("l"), 'љ' => out.push_str("lj"),
+            'м' => out.push_str("m"), 'н' => out.push_str("n"),
+            'њ' => out.push_str("nj"), 'о' => out.push_str("o"),
+            'п' => out.push_str("p"), 'р' => out.push_str("r"),
+            'с' => out.push_str("s"), 'т' => out.push_str("t"),
+            'ћ' => out.push_str("ć"), 'у' => out.push_str("u"),
+            'ф' => out.push_str("f"), 'х' => out.push_str("h"),
+            'ц' => out.push_str("c"), 'ч' => out.push_str("č"),
+            'џ' => out.push_str("dž"), 'ш' => out.push_str("š"),
+            'ё' => out.push_str("yo"), 'Ё' => out.push_str("Yo"),
+            'є' => out.push_str("ye"), 'Є' => out.push_str("Ye"),
+            'і' => out.push_str("i"), 'І' => out.push_str("I"),
+            'ї' => out.push_str("yi"), 'Ї' => out.push_str("Yi"),
+            'ґ' => out.push_str("g"), 'Ґ' => out.push_str("G"),
+            'ў' => out.push_str("o'"), 'Ў' => out.push_str("O'"),
+            'қ' => out.push_str("q"), 'Қ' => out.push_str("Q"),
+            'ғ' => out.push_str("g'"), 'Ғ' => out.push_str("G'"),
+            'ҳ' => out.push_str("h"), 'Ҳ' => out.push_str("H"),
+            'й' => out.push_str("j"), 'Й' => out.push_str("J"),
+            'ы' => out.push_str("y"), 'Ы' => out.push_str("Y"),
+            'ь' => {}, 'Ь' => {},
+            'ъ' => {}, 'Ъ' => {},
+            'щ' => out.push_str("shch"), 'Щ' => out.push_str("Shch"),
+            'э' => out.push_str("e"), 'Э' => out.push_str("E"),
+            'я' => out.push_str("ya"), 'Я' => out.push_str("Ya"),
+            'ю' => out.push_str("yu"), 'Ю' => out.push_str("Yu"),
+            'ҷ' => out.push_str("ch"), 'Ҷ' => out.push_str("Ch"),
+            'ӣ' => out.push_str("i"), 'Ӣ' => out.push_str("I"),
+            'ӯ' => out.push_str("u"), 'Ӯ' => out.push_str("U"),
+            _ => out.push(c),
+        }
+    }
+    out
+}
+
 fn transliterate(s: &str) -> String {
-    use cyrla::ConverterBuilder;
-    use std::sync::OnceLock;
-    static CONVERTER: OnceLock<cyrla::Converter> = OnceLock::new();
-    let converter = CONVERTER.get_or_init(|| ConverterBuilder::new().build());
     if s.contains(is_cyrillic) {
-        converter.cyr_to_lat(s)
+        cyr_to_lat(s)
     } else {
-        converter.lat_to_cyr(s)
+        lat_to_cyr(s)
     }
 }
 
