@@ -692,6 +692,7 @@ fn main() {
         t.window_title.as_str(),
     );
     win.make_resizable(true);
+    win.size_range(400, 300, 0, 0);
 
     let header_title = t.header_title.clone();
     let header_subtitle = t.header_subtitle.clone();
@@ -880,6 +881,37 @@ fn main() {
     quit_btn.set_label_size(11);
     quit_btn.set_label_color(Color::Black);
     quit_btn.set_frame(widget_themes::OS_BUTTON_UP_BOX);
+
+    let mut hdr = header.clone();
+    let mut curr = curr_label.clone();
+    let mut search = search_label.clone();
+    let mut inp = filter_inp.clone();
+    let mut tbl = table.clone();
+    let mut apply = apply_btn.clone();
+    let mut quit = quit_btn.clone();
+
+    win.resize_callback(move |w, _x, _y, nw, nh| {
+        let body_y = 68;
+        let body_h = nh - body_y - 8;
+        let list_y = body_y + 72;
+        let list_h = body_h - 104;
+        let btn_y = list_y + list_h + 8;
+
+        hdr.resize(0, 0, nw, 56);
+        curr.resize(20, body_y, nw - 40, 24);
+        search.resize(20, body_y + 25, nw - 40, 16);
+        inp.resize(20, body_y + 40, nw - 40, 23);
+        tbl.resize(20, list_y, nw - 40, list_h);
+
+        let cw = ((nw - 40) as f32 * 0.71) as i32;
+        tbl.set_col_width(0, cw);
+        tbl.set_col_width(1, (nw - 40) - cw - 1);
+
+        apply.resize(nw - 100, btn_y, 80, 23);
+        quit.resize(20, btn_y, 80, 23);
+
+        w.redraw();
+    });
 
     win.end();
     win.show();
