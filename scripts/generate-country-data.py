@@ -29,6 +29,18 @@ OUTPUT = os.path.join(DATA_DIR, "country_names.json")
 GH_API = "https://api.github.com/repos/unicode-org/cldr-json/releases/latest"
 GH_DL = "https://github.com/unicode-org/cldr-json/releases/download"
 
+# Inherit GITHUB_TOKEN from the environment (set by GitHub Actions)
+# to avoid unauthenticated rate limits (60/hr vs 5000/hr).
+_GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN") or os.environ.get("GH_TOKEN") or ""
+
+
+def _github_request(url: str, *, data: bytes | None = None, timeout: int = 30) -> urllib.request.Request:
+    """Create an HTTP request with optional GitHub token auth."""
+    headers = {"User-Agent": "xfce-aero-lang-changer"}
+    if _GITHUB_TOKEN:
+        headers["Authorization"] = f"Bearer {_GITHUB_TOKEN}"
+    return urllib.request.Request(url, data=data, headers=headers)
+
 # Manual override entries for languages with no CLDR or system data.
 # These take highest priority.
 MANUAL_OVERRIDES: dict[str, dict[str, str]] = {
@@ -84,7 +96,8 @@ def fetch_latest_cldr_version() -> str:
     """Determine latest CLDR release tag from GitHub API."""
     log("Fetching latest CLDR version from GitHub API...")
     try:
-        req = urllib.request.Request(GH_API, headers={"Accept": "application/json", "User-Agent": "xfce-aero-lang-changer"})
+        req = _github_request(GH_API, timeout=30)
+        req.add_header("Accept", "application/json")
         with urllib.request.urlopen(req, timeout=30) as resp:
             data = json.loads(resp.read().decode())
             tag = data["tag_name"]
@@ -108,7 +121,7 @@ def download_cldr_zip(version: str, dest: str) -> str:
 
     log(f"Downloading {url}...")
     try:
-        req = urllib.request.Request(url, headers={"User-Agent": "xfce-aero-lang-changer"})
+        req = _github_request(url, timeout=120)
         with urllib.request.urlopen(req, timeout=120) as resp:
             with open(zip_path, "wb") as f:
                 f.write(resp.read())

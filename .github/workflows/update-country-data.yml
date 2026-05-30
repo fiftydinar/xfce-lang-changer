@@ -32,6 +32,8 @@ jobs:
 
       - name: Generate country data
         run: python3 scripts/generate-country-data.py
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Check for changes
         id: diff
