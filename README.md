@@ -1,15 +1,15 @@
 # xfce-aero-lang-changer
 
-<table style="border-collapse: collapse; border: none; background: transparent;">
+<table style="border-collapse: collapse; border: none; background: transparent; width: 100%;">
   <tr>
-    <td style="border: none; padding: 0; background: transparent;">
-      <img src="showcase/showcase1.png" alt="showcase1" style="width: 100%; height: 250px; object-fit: cover; background: transparent; display: block;" />
+    <td style="border: none; padding: 0 4px; background: transparent; width: 33.33%;">
+      <img src="showcase/showcase1.png" alt="showcase1" style="width: 100%; height: auto; display: block; background: transparent;" />
     </td>
-    <td style="border: none; padding: 0; background: transparent;">
-      <img src="showcase/showcase2.png" alt="showcase2" style="width: 100%; height: 250px; object-fit: cover; background: transparent; display: block;" />
+    <td style="border: none; padding: 0 4px; background: transparent; width: 33.33%;">
+      <img src="showcase/showcase2.png" alt="showcase2" style="width: 100%; height: auto; display: block; background: transparent;" />
     </td>
-    <td style="border: none; padding: 0; background: transparent;">
-      <img src="showcase/showcase3.png" alt="showcase3" style="width: 100%; height: 250px; object-fit: cover; background: transparent; display: block;" />
+    <td style="border: none; padding: 0 4px; background: transparent; width: 33.33%;">
+      <img src="showcase/showcase3.png" alt="showcase3" style="width: 100%; height: auto; display: block; background: transparent;" />
     </td>    
   </tr>
 </table>
