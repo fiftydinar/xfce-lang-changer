@@ -1,7 +1,7 @@
 # Maintainer: fiftydinar <srbaizoki4@tuta.io>
 
 pkgname=xfce-aero-lang-changer
-pkgver=1.0.0
+pkgver=1.0.1
 pkgrel=1
 pkgdesc="GUI language switcher for XFCE with Aero-style theming"
 arch=('x86_64')
