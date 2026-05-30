@@ -1,4 +1,4 @@
-use std::{cell::RefCell, collections::HashMap, path::PathBuf, process::Command, rc::Rc};
+use std::{cell::RefCell, cmp, collections::HashMap, path::PathBuf, process::Command, rc::Rc};
 use fltk::{
     app, button::Button, dialog,
     enums::{Align, CallbackTrigger, Color, FrameType},
@@ -855,12 +855,20 @@ fn main() {
     filter_inp.set_callback(move |inp| {
         let q = inp.value().to_lowercase();
         let q_alt = transliterate(&q);
+        let max_dist = if q.is_empty() { 0 } else { cmp::max(2, q.len() / 3) };
         let mut new_vis = Vec::new();
         let avail = filter_avail.borrow();
         for (i, (human, loc)) in avail.iter().enumerate() {
             let h = human.to_lowercase();
             let l = loc.to_lowercase();
-            if q.is_empty() || h.contains(&q) || l.contains(&q) || h.contains(&q_alt) || l.contains(&q_alt) {
+            if q.is_empty()
+                || h.contains(&q) || l.contains(&q)
+                || h.contains(&q_alt) || l.contains(&q_alt)
+                || (!q.is_empty() && strsim::levenshtein(&q, &h) <= max_dist)
+                || (!q.is_empty() && strsim::levenshtein(&q, &l) <= max_dist)
+                || (!q.is_empty() && strsim::levenshtein(&q_alt, &h) <= max_dist)
+                || (!q.is_empty() && strsim::levenshtein(&q_alt, &l) <= max_dist)
+            {
                 new_vis.push(i);
             }
         }
