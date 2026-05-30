@@ -154,7 +154,9 @@ fn get_available_locales() -> Vec<(String, String)> {
         if output.status.success() {
             for line in String::from_utf8_lossy(&output.stdout).lines() {
                 let l = line.trim();
-                if !l.is_empty() && l != "C" && l != "POSIX" && l != "C.utf8" {
+                if !l.is_empty() && l != "C" && l != "POSIX" && l != "C.utf8"
+                    && (l.contains(".utf8") || l.contains(".UTF-8"))
+                {
                     raw.push(l.to_string());
                 }
             }
@@ -163,9 +165,15 @@ fn get_available_locales() -> Vec<(String, String)> {
 
     let mut groups: std::collections::BTreeMap<String, String> = std::collections::BTreeMap::new();
     for loc in &raw {
-        let base = loc.split('.').next().unwrap_or(loc).to_string();
+        let without_encoding = loc.split('.').next().unwrap_or(loc);
+        let modifier = loc.split('@').nth(1).unwrap_or("");
+        let group_key = if modifier.is_empty() {
+            without_encoding.to_string()
+        } else {
+            format!("{}@{}", without_encoding, modifier)
+        };
         let is_utf8 = loc.contains(".utf8") || loc.contains(".UTF-8");
-        let entry = groups.entry(base);
+        let entry = groups.entry(group_key);
         use std::collections::btree_map::Entry;
         match entry {
             Entry::Occupied(mut e) => {
@@ -185,11 +193,20 @@ fn get_available_locales() -> Vec<(String, String)> {
     }).collect()
 }
 
-fn lang_name(code: &str) -> String {
+fn lang_name(code: &str, modifier: Option<&str>) -> String {
     if let Some(lang) = isolang::Language::from_639_1(code) {
-        lang.to_autonym()
+        let autonym = lang.to_autonym()
             .map(|s| s.to_string())
-            .unwrap_or_else(|| lang.to_name().to_string())
+            .unwrap_or_else(|| lang.to_name().to_string());
+        match modifier {
+            Some("latin") | Some("Latn") if is_cyrillic(autonym.chars().next().unwrap_or(' ')) => {
+                transliterate(&autonym)
+            }
+            Some("cyrillic") | Some("Cyrl") if !is_cyrillic(autonym.chars().next().unwrap_or(' ')) => {
+                transliterate(&autonym)
+            }
+            _ => autonym,
+        }
     } else {
         code.to_string()
     }
@@ -204,14 +221,26 @@ fn country_name(code: &str, lang: &str) -> String {
 }
 
 fn locale_to_human_name(locale: &str) -> String {
-    let lang_part = locale.split('.').next().unwrap_or(locale);
+    let modifier = locale.split('@').nth(1);
+    let without_modifier = locale.split('@').next().unwrap_or(locale);
+    let lang_part = without_modifier.split('.').next().unwrap_or(without_modifier);
     let parts: Vec<&str> = lang_part.split('_').collect();
     let lang_code = parts[0];
     let region_code = parts.get(1).copied().unwrap_or("");
 
-    let lang_name = lang_name(lang_code);
+    let lang_name = lang_name(lang_code, modifier);
     let region_name = if !region_code.is_empty() {
-        let c = country_name(region_code, lang_code);
+        let mut c = country_name(region_code, lang_code);
+        let first_char = c.chars().next().unwrap_or(' ');
+        match modifier {
+            Some("latin") | Some("Latn") if is_cyrillic(first_char) => {
+                c = transliterate(&c);
+            }
+            Some("cyrillic") | Some("Cyrl") if !is_cyrillic(first_char) => {
+                c = transliterate(&c);
+            }
+            _ => {}
+        }
         format!(" ({})", c)
     } else {
         String::new()
