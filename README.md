@@ -37,7 +37,6 @@ This guard exists because the tool writes to a file that only certain session st
 - X11 session (Wayland is not supported by the compatibility guard)
 - System languages generated (check with `locale -a`)
 - Pango, Cairo and X11 client libraries (already present on typical desktop installs)
-- `noto-fonts` and `noto-fonts-extra` recommended for full Unicode coverage across scripts
 
 **Build-time:**
 - Rust toolchain (`cargo`)
